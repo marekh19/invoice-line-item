@@ -1,0 +1,19 @@
+{
+  "name": "@repo/ui",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "exports": {
+    "./components/*": "./src/components/*.tsx",
+    "./postcss.config": "./postcss.config.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@mantine/core": "catalog:"
+  },
+  "peerDependencies": {
+    "@mantine/core": "catalog:"
+  }
+}

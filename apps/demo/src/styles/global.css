@@ -1,0 +1,9 @@
+@layer tailwind, mantine, app;
+
+@import 'tailwindcss' layer(tailwind);
+
+@import '@mantine/core/styles.css' layer(mantine);
+
+@layer app {
+  /* Custom app overrides */
+}
