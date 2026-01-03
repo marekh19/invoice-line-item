@@ -30,6 +30,23 @@ interface UseLineItemStateReturn {
 }
 
 /**
+ * Computes the complementary amount based on the source field.
+ * If source value is null, both fields are cleared.
+ */
+const computeAmounts = (
+  source: 'net' | 'gross',
+  sourceValue: number | null,
+  vatRate: number,
+): { net: number | null; gross: number | null } =>
+  sourceValue === null
+    ? { net: null, gross: null }
+    : {
+        net: source === 'net' ? sourceValue : computeNet(sourceValue, vatRate),
+        gross:
+          source === 'gross' ? sourceValue : computeGross(sourceValue, vatRate),
+      }
+
+/**
  * Hook for managing line item state with VAT calculations.
  *
  * ## Key behaviors:
@@ -66,102 +83,47 @@ export function useLineItemState({
   const [vatRate, setVatRate] = useState<number>(initialValue.vatRate)
   const [lastEdited, setLastEdited] = useState<LastEdited>(null)
 
-  /**
-   * Emits the current value to the parent component.
-   */
-  const emitChange = (
-    newNet: number | null,
-    newGross: number | null,
-    newVatRate: number,
-  ) => {
-    onChange?.({ net: newNet, gross: newGross, vatRate: newVatRate })
+  const commit = (amounts: { net: number | null; gross: number | null }, rate: number) => {
+    setNet(amounts.net)
+    setGross(amounts.gross)
+    onChange?.({ ...amounts, vatRate: rate })
   }
 
-  /**
-   * Handles changes to the net input (during typing).
-   * Only updates local state and marks net as last edited.
-   */
   const handleNetChange = (value: number | string) => {
-    const numValue = toNumberOrNull(value)
-    setNet(numValue)
+    setNet(toNumberOrNull(value))
     setLastEdited('net')
   }
 
-  /**
-   * Handles changes to the gross input (during typing).
-   * Only updates local state and marks gross as last edited.
-   */
   const handleGrossChange = (value: number | string) => {
-    const numValue = toNumberOrNull(value)
-    setGross(numValue)
+    setGross(toNumberOrNull(value))
     setLastEdited('gross')
   }
 
-  /**
-   * Handles blur of the net input.
-   * Commits the value and recalculates gross.
-   */
   const handleNetBlur = () => {
-    if (net === null) {
-      // Clear both fields when net is cleared
-      setGross(null)
-      emitChange(null, null, vatRate)
-    } else {
-      // Compute gross from net
-      const newGross = computeGross(net, vatRate)
-      setGross(newGross)
-      emitChange(net, newGross, vatRate)
-    }
+    const amounts = computeAmounts('net', net, vatRate)
+    setGross(amounts.gross)
+    onChange?.({ ...amounts, vatRate })
   }
 
-  /**
-   * Handles blur of the gross input.
-   * Commits the value and recalculates net.
-   */
   const handleGrossBlur = () => {
-    if (gross === null) {
-      // Clear both fields when gross is cleared
-      setNet(null)
-      emitChange(null, null, vatRate)
-    } else {
-      // Compute net from gross
-      const newNet = computeNet(gross, vatRate)
-      setNet(newNet)
-      emitChange(newNet, gross, vatRate)
-    }
+    const amounts = computeAmounts('gross', gross, vatRate)
+    setNet(amounts.net)
+    onChange?.({ ...amounts, vatRate })
   }
 
-  /**
-   * Handles VAT rate change.
-   * Recalculates based on the last edited field (or net if pristine).
-   */
   const handleVatRateChange = (newRate: number) => {
     setVatRate(newRate)
 
-    // Determine source of truth: last edited field, or net as default
     const source = lastEdited ?? 'net'
+    const sourceValue = source === 'net' ? net : gross
 
-    if (source === 'net') {
-      if (net !== null) {
-        // Recompute gross from net
-        const newGross = computeGross(net, newRate)
-        setGross(newGross)
-        emitChange(net, newGross, newRate)
-      } else {
-        // No net value, just emit rate change
-        emitChange(net, gross, newRate)
-      }
-    } else {
-      if (gross !== null) {
-        // Recompute net from gross
-        const newNet = computeNet(gross, newRate)
-        setNet(newNet)
-        emitChange(newNet, gross, newRate)
-      } else {
-        // No gross value, just emit rate change
-        emitChange(net, gross, newRate)
-      }
-    }
+    // Only recompute if source has a value
+    const amounts =
+      sourceValue !== null
+        ? computeAmounts(source, sourceValue, newRate)
+        : { net, gross }
+
+    commit(amounts, newRate)
   }
 
   return {
