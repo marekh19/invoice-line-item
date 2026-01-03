@@ -1,8 +1,9 @@
-//  @ts-check
-
+import { defineConfig } from 'eslint/config'
 import { tanstackConfig } from '@tanstack/eslint-config'
+import reactHooks from 'eslint-plugin-react-hooks'
 
-export default [
-  { ignores: ['postcss.config.js'] },
+export default defineConfig([
+  { ignores: ['*.config.{js,ts}'] },
   ...tanstackConfig,
-]
+  reactHooks.configs.flat['recommended-latest'],
+])

@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import postCssConfig from '@repo/ui/postcss.config'
 
 export default {

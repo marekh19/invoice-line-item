@@ -1,9 +1,9 @@
 import { NumberInput } from '@repo/ui/components/NumberInput'
 import { Select } from '@repo/ui/components/Select'
-import { useLineItemState } from '../hooks/useLineItemState'
-import { formatForDisplay } from '../utils/money'
-import type { LineItemValue, VatRateOption } from '../types'
+import type { LineItemValue, VatRateOption } from '@/features/invoicing/types'
 import type { NumberInputProps } from '@mantine/core'
+import { formatForDisplay } from '@/features/invoicing/utils/money'
+import { useLineItemState } from '@/features/invoicing/hooks/useLineItemState'
 
 type UnitDisplay = {
   prefix?: string

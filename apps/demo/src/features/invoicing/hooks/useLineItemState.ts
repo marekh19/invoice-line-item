@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
-import { toNumberOrNull } from '../utils/money'
-import { computeGross, computeNet } from '../utils/vat'
-import type { LastEdited, LineItemValue } from '../types'
+import type { LastEdited, LineItemValue } from '@/features/invoicing/types'
+import { computeGross, computeNet } from '@/features/invoicing/utils/vat'
+import { toNumberOrNull } from '@/features/invoicing/utils/money'
 
 interface UseLineItemStateOptions {
   /** Initial value for the line item */
@@ -73,7 +73,7 @@ export function useLineItemState({
     (newNet: number | null, newGross: number | null, newVatRate: number) => {
       onChange?.({ net: newNet, gross: newGross, vatRate: newVatRate })
     },
-    [onChange]
+    [onChange],
   )
 
   /**
@@ -163,7 +163,7 @@ export function useLineItemState({
         }
       }
     },
-    [net, gross, lastEdited, emitChange]
+    [net, gross, lastEdited, emitChange],
   )
 
   return {

@@ -36,7 +36,7 @@ export function round2(value: number): number {
  * toNumberOrNull(NaN) // null
  */
 export function toNumberOrNull(
-  value: number | string | undefined | null
+  value: number | string | undefined | null,
 ): number | null {
   if (value === '' || value === undefined || value === null) {
     return null
