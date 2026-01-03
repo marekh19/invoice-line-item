@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import type { LastEdited, LineItemValue } from '@/features/invoicing/types'
 import { computeGross, computeNet } from '@/features/invoicing/utils/vat'
 import { toNumberOrNull } from '@/features/invoicing/utils/money'
@@ -69,38 +69,39 @@ export function useLineItemState({
   /**
    * Emits the current value to the parent component.
    */
-  const emitChange = useCallback(
-    (newNet: number | null, newGross: number | null, newVatRate: number) => {
-      onChange?.({ net: newNet, gross: newGross, vatRate: newVatRate })
-    },
-    [onChange],
-  )
+  const emitChange = (
+    newNet: number | null,
+    newGross: number | null,
+    newVatRate: number,
+  ) => {
+    onChange?.({ net: newNet, gross: newGross, vatRate: newVatRate })
+  }
 
   /**
    * Handles changes to the net input (during typing).
    * Only updates local state and marks net as last edited.
    */
-  const handleNetChange = useCallback((value: number | string) => {
+  const handleNetChange = (value: number | string) => {
     const numValue = toNumberOrNull(value)
     setNet(numValue)
     setLastEdited('net')
-  }, [])
+  }
 
   /**
    * Handles changes to the gross input (during typing).
    * Only updates local state and marks gross as last edited.
    */
-  const handleGrossChange = useCallback((value: number | string) => {
+  const handleGrossChange = (value: number | string) => {
     const numValue = toNumberOrNull(value)
     setGross(numValue)
     setLastEdited('gross')
-  }, [])
+  }
 
   /**
    * Handles blur of the net input.
    * Commits the value and recalculates gross.
    */
-  const handleNetBlur = useCallback(() => {
+  const handleNetBlur = () => {
     if (net === null) {
       // Clear both fields when net is cleared
       setGross(null)
@@ -111,13 +112,13 @@ export function useLineItemState({
       setGross(newGross)
       emitChange(net, newGross, vatRate)
     }
-  }, [net, vatRate, emitChange])
+  }
 
   /**
    * Handles blur of the gross input.
    * Commits the value and recalculates net.
    */
-  const handleGrossBlur = useCallback(() => {
+  const handleGrossBlur = () => {
     if (gross === null) {
       // Clear both fields when gross is cleared
       setNet(null)
@@ -128,43 +129,40 @@ export function useLineItemState({
       setNet(newNet)
       emitChange(newNet, gross, vatRate)
     }
-  }, [gross, vatRate, emitChange])
+  }
 
   /**
    * Handles VAT rate change.
    * Recalculates based on the last edited field (or net if pristine).
    */
-  const handleVatRateChange = useCallback(
-    (newRate: number) => {
-      setVatRate(newRate)
+  const handleVatRateChange = (newRate: number) => {
+    setVatRate(newRate)
 
-      // Determine source of truth: last edited field, or net as default
-      const source = lastEdited ?? 'net'
+    // Determine source of truth: last edited field, or net as default
+    const source = lastEdited ?? 'net'
 
-      if (source === 'net') {
-        if (net !== null) {
-          // Recompute gross from net
-          const newGross = computeGross(net, newRate)
-          setGross(newGross)
-          emitChange(net, newGross, newRate)
-        } else {
-          // No net value, just emit rate change
-          emitChange(net, gross, newRate)
-        }
+    if (source === 'net') {
+      if (net !== null) {
+        // Recompute gross from net
+        const newGross = computeGross(net, newRate)
+        setGross(newGross)
+        emitChange(net, newGross, newRate)
       } else {
-        if (gross !== null) {
-          // Recompute net from gross
-          const newNet = computeNet(gross, newRate)
-          setNet(newNet)
-          emitChange(newNet, gross, newRate)
-        } else {
-          // No gross value, just emit rate change
-          emitChange(net, gross, newRate)
-        }
+        // No net value, just emit rate change
+        emitChange(net, gross, newRate)
       }
-    },
-    [net, gross, lastEdited, emitChange],
-  )
+    } else {
+      if (gross !== null) {
+        // Recompute net from gross
+        const newNet = computeNet(gross, newRate)
+        setNet(newNet)
+        emitChange(newNet, gross, newRate)
+      } else {
+        // No gross value, just emit rate change
+        emitChange(net, gross, newRate)
+      }
+    }
+  }
 
   return {
     net,
