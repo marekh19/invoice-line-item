@@ -223,11 +223,11 @@ describe('LineItem - Pristine Initial State', () => {
 })
 
 // =============================================================================
-// C) LAST EDITED PRECEDENCE
+// C) NET IS ALWAYS SOURCE OF TRUTH FOR VAT CHANGES
 // =============================================================================
 
-describe('LineItem - Last Edited Precedence', () => {
-  it('VAT rate change preserves last edited field (gross)', async () => {
+describe('LineItem - Net is Source of Truth for VAT Changes', () => {
+  it('VAT rate change always uses net as source, even after editing gross', async () => {
     const user = userEvent.setup()
     const { onChange } = renderLineItem({
       value: { net: null, gross: null, vatRate: 21 },
@@ -245,28 +245,29 @@ describe('LineItem - Last Edited Precedence', () => {
       vatRate: 21,
     })
 
-    // Step 2: Edit gross → blur → net computed
+    // Step 2: Edit gross → blur → net computed (user works backwards from target price)
     await user.clear(grossInput)
     await typeValue(user, grossInput, '200')
     await user.click(netInput)
 
     expect(onChange).toHaveBeenLastCalledWith({
-      net: 165.29, // 200 / 1.21 rounded
+      net: 165.29, // 200 / 1.21 rounded - this becomes the "real" price
       gross: 200,
       vatRate: 21,
     })
 
-    // Step 3: Change VAT rate → should preserve gross (last edited)
+    // Step 3: Change VAT rate → net stays, gross is recalculated
+    // Even though gross was last edited, net is always the source of truth
     await selectVatRate(user, '10%')
 
     expect(onChange).toHaveBeenLastCalledWith({
-      net: 181.82, // 200 / 1.10 rounded
-      gross: 200,
+      net: 165.29, // Net is preserved
+      gross: 181.82, // 165.29 * 1.10 rounded
       vatRate: 10,
     })
   })
 
-  it('VAT rate change preserves last edited field (net)', async () => {
+  it('VAT rate change uses net regardless of editing order', async () => {
     const user = userEvent.setup()
     const { onChange } = renderLineItem({
       value: { net: null, gross: null, vatRate: 21 },
@@ -278,12 +279,12 @@ describe('LineItem - Last Edited Precedence', () => {
     await typeValue(user, grossInput, '121')
     await user.click(netInput)
 
-    // Then edit net (becomes last edited)
+    // Then edit net
     await user.clear(netInput)
     await typeValue(user, netInput, '100')
     await user.click(grossInput)
 
-    // Change VAT rate → should preserve net (last edited)
+    // Change VAT rate → net is always preserved
     await selectVatRate(user, '10%')
 
     expect(onChange).toHaveBeenLastCalledWith({

@@ -51,17 +51,19 @@ const computeAmounts = (
  *
  * ## Key behaviors:
  *
- * 1. **Source of truth**: The last edited field determines which value
- *    is preserved during recalculations. Default is 'net' for pristine state.
+ * 1. **Source of truth**: Net is always the source of truth for VAT rate changes.
+ *    This provides predictable behavior aligned with standard B2B invoicing.
  *
  * 2. **Commit-based recalculation**: Recalculations happen on:
- *    - Blur of net/gross input
- *    - VAT rate change
+ *    - Blur of net/gross input (recalculates from the blurred field)
+ *    - VAT rate change (recalculates gross from net)
  *
  * 3. **Empty handling**: When a field is cleared and blurred,
  *    the other field is also cleared for consistency.
  *
  * 4. **Precise math**: Uses big.js internally for accurate decimal calculations.
+ *
+ * @see /docs/04-reasoning.md for detailed explanation of the recalculation strategy
  *
  * @example
  * const {
@@ -81,13 +83,8 @@ export function useLineItemState({
   const [net, setNet] = useState<number | null>(initialValue.net)
   const [gross, setGross] = useState<number | null>(initialValue.gross)
   const [vatRate, setVatRate] = useState<number>(initialValue.vatRate)
-  const [lastEdited, setLastEdited] = useState<LastEdited>(null)
-
-  const commit = (amounts: { net: number | null; gross: number | null }, rate: number) => {
-    setNet(amounts.net)
-    setGross(amounts.gross)
-    onChange?.({ ...amounts, vatRate: rate })
-  }
+  // Track last edited for potential future use, but VAT changes always use net
+  const [, setLastEdited] = useState<LastEdited>(null)
 
   const handleNetChange = (value: number | string) => {
     setNet(toNumberOrNull(value))
@@ -111,19 +108,18 @@ export function useLineItemState({
     onChange?.({ ...amounts, vatRate })
   }
 
+  /**
+   * Handles VAT rate change.
+   * Always recalculates gross from net (net is the source of truth).
+   * If net is null, only the rate changes without recalculation.
+   */
   const handleVatRateChange = (newRate: number) => {
     setVatRate(newRate)
 
-    const source = lastEdited ?? 'net'
-    const sourceValue = source === 'net' ? net : gross
-
-    // Only recompute if source has a value
-    const amounts =
-      sourceValue !== null
-        ? computeAmounts(source, sourceValue, newRate)
-        : { net, gross }
-
-    commit(amounts, newRate)
+    // Net is always the source of truth for VAT changes
+    const newGross = net !== null ? computeGross(net, newRate) : gross
+    setGross(newGross)
+    onChange?.({ net, gross: newGross, vatRate: newRate })
   }
 
   return {
