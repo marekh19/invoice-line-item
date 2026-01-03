@@ -1,17 +1,8 @@
-import { useState } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { ActionIcon, Button, Switch, Tooltip } from '@repo/ui/components'
-import { LineItem } from './LineItem'
-import type { InvoiceFormValues } from '@/features/invoicing/schemas/invoiceForm'
-import type {
-  Invoice,
-  LineItemValue,
-  VatRateOption,
-} from '@/features/invoicing/types'
-import { useUpdateInvoiceLinesMutation } from '@/features/invoicing/api/mutations'
-import { invoiceFormSchema } from '@/features/invoicing/schemas/invoiceForm'
+import type { Invoice, VatRateOption } from '@/features/invoicing/types'
+import { LineItem } from '@/features/invoicing/components/LineItem'
+import { useInvoiceForm } from '@/features/invoicing/hooks/useInvoiceForm'
 
 type Props = {
   /** Invoice data from server */
@@ -33,48 +24,21 @@ type Props = {
  * to stay in sync with server data.
  */
 export const InvoiceForm = ({ invoice, vatRates }: Props) => {
-  const [isEditing, setIsEditing] = useState(false)
-  const updateMutation = useUpdateInvoiceLinesMutation()
-
-  const defaultVatRate = vatRates.at(0)?.value ?? 0
-
-  const form = useForm<InvoiceFormValues>({
-    resolver: zodResolver(invoiceFormSchema),
-    values: { lines: invoice.lines },
+  const {
+    form,
+    isEditing,
+    updateMutation,
+    fields,
+    setIsEditing,
+    handleSubmit,
+    handleCancel,
+    handleAddLine,
+    handleLineChange,
+    handleRemove,
+  } = useInvoiceForm({
+    invoice,
+    vatRates,
   })
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'lines',
-    keyName: '_fieldId', // Avoid conflict with our `id` field
-  })
-
-  const handleSubmit = form.handleSubmit(async (data) => {
-    await updateMutation.mutateAsync(data.lines)
-    setIsEditing(false)
-  })
-
-  const handleCancel = () => {
-    form.reset()
-    setIsEditing(false)
-  }
-
-  const handleAddLine = () => {
-    append({
-      id: crypto.randomUUID(),
-      net: null,
-      gross: null,
-      vatRate: defaultVatRate,
-    })
-  }
-
-  const handleLineChange = (index: number, newValue: LineItemValue) => {
-    const currentLine = form.getValues(`lines.${index}`)
-    form.setValue(`lines.${index}`, {
-      ...currentLine,
-      ...newValue,
-    })
-  }
 
   return (
     <form onSubmit={handleSubmit}>
@@ -120,7 +84,7 @@ export const InvoiceForm = ({ invoice, vatRates }: Props) => {
                   <ActionIcon
                     variant="subtle"
                     color="red"
-                    onClick={() => remove(index)}
+                    onClick={() => handleRemove(index)}
                     disabled={fields.length <= 1}
                     aria-label="Remove line"
                     className={index === 0 ? 'mb-6' : ''}

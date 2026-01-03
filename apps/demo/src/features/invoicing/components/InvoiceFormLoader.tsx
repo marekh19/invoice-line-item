@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { InvoiceForm } from './InvoiceForm'
+import { InvoiceForm } from '@/features/invoicing/components/InvoiceForm'
 import {
   invoiceQueryOptions,
   vatRatesQueryOptions,
