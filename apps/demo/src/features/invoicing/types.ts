@@ -11,6 +11,23 @@ export type LineItemValue = {
 }
 
 /**
+ * A persisted invoice line item with a unique identifier.
+ * Used for API responses and form state management.
+ */
+export type InvoiceLine = LineItemValue & {
+  id: string
+}
+
+/**
+ * A simple invoice model containing an array of line items.
+ * This is a simplified model for demo purposes.
+ */
+export type Invoice = {
+  id: string
+  lines: Array<InvoiceLine>
+}
+
+/**
  * VAT rate option for the dropdown.
  * Value is the percentage (e.g., 21 for 21%).
  */
