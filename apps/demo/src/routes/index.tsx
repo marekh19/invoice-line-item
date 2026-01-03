@@ -5,11 +5,10 @@ import {
   invoiceQueryOptions,
   vatRatesQueryOptions,
 } from '@/features/invoicing/api/queries'
-import { InvoiceLinesList } from '@/features/invoicing/components/InvoiceLinesList'
+import { InvoiceFormLoader } from '@/features/invoicing/components/InvoiceFormLoader'
 
 export const Route = createFileRoute('/')({
   loader: async ({ context }) => {
-    // Prefetch data in parallel
     await Promise.all([
       context.queryClient.ensureQueryData(vatRatesQueryOptions),
       context.queryClient.ensureQueryData(invoiceQueryOptions),
@@ -20,10 +19,10 @@ export const Route = createFileRoute('/')({
 
 function App() {
   return (
-    <div className="p-8">
+    <div className="p-8 max-w-3xl">
       <h1 className="text-2xl font-bold mb-6">Invoice Line Item Demo</h1>
-      <Suspense fallback={<Skeleton height={80} radius="md" />}>
-        <InvoiceLinesList />
+      <Suspense fallback={<Skeleton height={200} radius="md" />}>
+        <InvoiceFormLoader />
       </Suspense>
     </div>
   )

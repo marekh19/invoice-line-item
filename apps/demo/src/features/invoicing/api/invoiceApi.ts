@@ -46,20 +46,20 @@ function createDefaultInvoice(): Invoice {
       {
         id: crypto.randomUUID(),
         net: 100,
-        gross: 121,
-        vatRate: 21,
-      },
-      {
-        id: crypto.randomUUID(),
-        net: 250,
-        gross: 275,
+        gross: 200,
         vatRate: 10,
       },
       {
         id: crypto.randomUUID(),
-        net: null,
-        gross: null,
-        vatRate: 21,
+        net: 200,
+        gross: 300,
+        vatRate: 10,
+      },
+      {
+        id: crypto.randomUUID(),
+        net: 100,
+        gross: 110,
+        vatRate: 10,
       },
     ],
   }

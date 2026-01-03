@@ -1,5 +1,8 @@
 export { ActionIcon } from './ActionIcon'
+export { Button } from './Button'
+export { Loader } from './Loader'
 export { NumberInput, type NumberInputProps } from './NumberInput'
 export { Select } from './Select'
 export { Skeleton } from './Skeleton'
+export { Switch } from './Switch'
 export { Tooltip } from './Tooltip'
