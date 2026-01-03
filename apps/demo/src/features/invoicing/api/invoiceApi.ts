@@ -1,15 +1,16 @@
 /**
- * In-Memory Invoice API Client
+ * Mock Invoice API Client with localStorage Persistence
  *
  * This is a naive and simplistic mock API implementation for demo purposes.
- * It simulates backend interaction with artificial delays and stores data in memory.
+ * It simulates backend interaction with artificial delays and persists data
+ * to localStorage so it survives page refreshes.
  *
  * In a real application, these functions would make HTTP requests to a backend server.
  *
  * ## Limitations
  *
- * - Data is lost on page refresh (in-memory only)
- * - No persistence, validation, or error handling
+ * - No real backend (localStorage only)
+ * - No validation or error handling
  * - Single invoice (no multi-invoice support)
  * - PUT replaces all lines (no partial updates)
  */
@@ -30,7 +31,68 @@ const delay = (ms: number = SIMULATED_DELAY_MS) =>
   new Promise((resolve) => setTimeout(resolve, ms))
 
 // =============================================================================
-// IN-MEMORY DATA STORE
+// LOCALSTORAGE PERSISTENCE
+// =============================================================================
+
+const STORAGE_KEY = 'invoice-demo-data'
+
+/**
+ * Default invoice data used when no saved data exists.
+ */
+function createDefaultInvoice(): Invoice {
+  return {
+    id: 'invoice-001',
+    lines: [
+      {
+        id: crypto.randomUUID(),
+        net: 100,
+        gross: 121,
+        vatRate: 21,
+      },
+      {
+        id: crypto.randomUUID(),
+        net: 250,
+        gross: 275,
+        vatRate: 10,
+      },
+      {
+        id: crypto.randomUUID(),
+        net: null,
+        gross: null,
+        vatRate: 21,
+      },
+    ],
+  }
+}
+
+/**
+ * Loads invoice from localStorage, or returns default if not found.
+ */
+function loadFromStorage(): Invoice {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored) as Invoice
+    }
+  } catch {
+    // Ignore parse errors, use default
+  }
+  return createDefaultInvoice()
+}
+
+/**
+ * Saves invoice to localStorage.
+ */
+function saveToStorage(invoice: Invoice): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(invoice))
+  } catch {
+    // Ignore storage errors (quota exceeded, etc.)
+  }
+}
+
+// =============================================================================
+// DATA STORE (initialized from localStorage)
 // =============================================================================
 
 /**
@@ -47,32 +109,9 @@ const vatRates: Array<VatRateOption> = [
 ]
 
 /**
- * In-memory invoice storage.
- * Initialized with some sample data for demo purposes.
+ * Invoice storage, initialized from localStorage.
  */
-let invoiceStore: Invoice = {
-  id: 'invoice-001',
-  lines: [
-    {
-      id: crypto.randomUUID(),
-      net: 100,
-      gross: 121,
-      vatRate: 21,
-    },
-    {
-      id: crypto.randomUUID(),
-      net: 250,
-      gross: 275,
-      vatRate: 10,
-    },
-    {
-      id: crypto.randomUUID(),
-      net: null,
-      gross: null,
-      vatRate: 21,
-    },
-  ],
-}
+let invoiceStore: Invoice = loadFromStorage()
 
 // =============================================================================
 // API METHODS
@@ -82,10 +121,6 @@ let invoiceStore: Invoice = {
  * Fetches available VAT rate options.
  *
  * @returns Promise resolving to array of VAT rate options
- *
- * @example
- * const rates = await invoiceApi.getVatRates()
- * // [{ value: 0, label: '0%' }, { value: 21, label: '21%' }, ...]
  */
 async function getVatRates(): Promise<Array<VatRateOption>> {
   await delay()
@@ -96,10 +131,6 @@ async function getVatRates(): Promise<Array<VatRateOption>> {
  * Fetches the current invoice with all line items.
  *
  * @returns Promise resolving to the invoice object
- *
- * @example
- * const invoice = await invoiceApi.getInvoice()
- * // { id: 'invoice-001', lines: [...] }
  */
 async function getInvoice(): Promise<Invoice> {
   await delay()
@@ -133,12 +164,6 @@ async function getInvoiceLines(): Promise<Array<InvoiceLine>> {
  *
  * @param lines - The new array of invoice lines (with or without IDs)
  * @returns Promise resolving to the updated invoice
- *
- * @example
- * await invoiceApi.updateInvoiceLines([
- *   { id: 'existing-id', net: 100, gross: 121, vatRate: 21 },
- *   { net: 200, gross: 242, vatRate: 21 }, // New line, ID will be generated
- * ])
  */
 async function updateInvoiceLines(
   lines: Array<Omit<InvoiceLine, 'id'> & { id?: string }>,
@@ -151,11 +176,12 @@ async function updateInvoiceLines(
     id: line.id ?? crypto.randomUUID(),
   }))
 
-  // Replace the store
+  // Update store and persist
   invoiceStore = {
     ...invoiceStore,
     lines: linesWithIds,
   }
+  saveToStorage(invoiceStore)
 
   // Return the updated invoice
   return getInvoice()
@@ -181,6 +207,7 @@ async function addInvoiceLine(vatRate: number = 21): Promise<Invoice> {
     ...invoiceStore,
     lines: [...invoiceStore.lines, newLine],
   }
+  saveToStorage(invoiceStore)
 
   return getInvoice()
 }
@@ -198,34 +225,20 @@ async function removeInvoiceLine(lineId: string): Promise<Invoice> {
     ...invoiceStore,
     lines: invoiceStore.lines.filter((line) => line.id !== lineId),
   }
+  saveToStorage(invoiceStore)
 
   return getInvoice()
 }
 
 /**
  * Resets the invoice to initial demo data.
- * Useful for testing and development.
+ * Clears localStorage and reinitializes with default data.
  */
 async function resetInvoice(): Promise<Invoice> {
   await delay()
 
-  invoiceStore = {
-    id: 'invoice-001',
-    lines: [
-      {
-        id: crypto.randomUUID(),
-        net: 100,
-        gross: 121,
-        vatRate: 21,
-      },
-      {
-        id: crypto.randomUUID(),
-        net: 250,
-        gross: 275,
-        vatRate: 10,
-      },
-    ],
-  }
+  invoiceStore = createDefaultInvoice()
+  saveToStorage(invoiceStore)
 
   return getInvoice()
 }
@@ -235,10 +248,11 @@ async function resetInvoice(): Promise<Invoice> {
 // =============================================================================
 
 /**
- * Mock invoice API client.
+ * Mock invoice API client with localStorage persistence.
  *
  * Provides methods for fetching and updating invoice data.
  * All methods return Promises and simulate network delay.
+ * Data persists across page refreshes via localStorage.
  */
 export const invoiceApi = {
   getVatRates,
