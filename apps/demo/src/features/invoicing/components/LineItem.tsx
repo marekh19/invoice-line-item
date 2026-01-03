@@ -1,8 +1,6 @@
-import { NumberInput } from '@repo/ui/components/NumberInput'
-import { Select } from '@repo/ui/components/Select'
-import { ActionIcon, Tooltip } from '@mantine/core'
 import { WrenchIcon } from 'lucide-react'
-import type { NumberInputProps } from '@mantine/core'
+import { ActionIcon, NumberInput, Select, Tooltip } from '@repo/ui/components'
+import type { NumberInputProps } from '@repo/ui/components'
 import type {
   FieldLabels,
   LineItemValue,

@@ -4,7 +4,7 @@
   "type": "module",
   "description": "",
   "exports": {
-    "./components/*": "./src/components/*.tsx",
+    "./components": "./src/components/index.ts",
     "./postcss.config": "./postcss.config.js"
   },
   "scripts": {

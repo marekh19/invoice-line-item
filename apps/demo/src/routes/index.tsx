@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { Skeleton } from '@mantine/core'
+import { Skeleton } from '@repo/ui/components'
 import {
   invoiceQueryOptions,
   vatRatesQueryOptions,
