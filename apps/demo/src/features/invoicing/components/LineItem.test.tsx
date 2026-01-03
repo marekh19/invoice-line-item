@@ -456,9 +456,7 @@ describe('LineItem - Inconsistent Initial Data', () => {
     expect(grossInput).toHaveAttribute('aria-invalid', 'true')
 
     // Fix button should be visible
-    expect(
-      getFixButton(),
-    ).toBeVisible()
+    expect(getFixButton()).toBeVisible()
   })
 
   it('hides error state once user starts editing', async () => {
@@ -471,18 +469,14 @@ describe('LineItem - Inconsistent Initial Data', () => {
 
     // Initially shows error
     expect(grossInput).toHaveAttribute('aria-invalid', 'true')
-    expect(
-      getFixButton(),
-    ).toBeVisible()
+    expect(getFixButton()).toBeVisible()
 
     // User clears and types a new value
     await typeValue(user, grossInput, '121')
 
     // Error should be hidden now (user has interacted)
     expect(grossInput).not.toHaveAttribute('aria-invalid', 'true')
-    expect(
-      queryFixButton(),
-    ).not.toBeInTheDocument()
+    expect(queryFixButton()).not.toBeInTheDocument()
   })
 
   it('does not show error during normal editing', async () => {
@@ -502,9 +496,7 @@ describe('LineItem - Inconsistent Initial Data', () => {
 
     // Still no error - we don't validate during user editing
     expect(grossInput).not.toHaveAttribute('aria-invalid', 'true')
-    expect(
-      queryFixButton(),
-    ).not.toBeInTheDocument()
+    expect(queryFixButton()).not.toBeInTheDocument()
   })
 })
 

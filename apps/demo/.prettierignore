@@ -1,0 +1,5 @@
+dist
+storybook-static
+.vite
+.cta.json
+.vscode

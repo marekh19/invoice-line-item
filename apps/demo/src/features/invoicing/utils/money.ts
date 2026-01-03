@@ -44,4 +44,3 @@ export const toNumberOrNull = (
 
   return Number.isNaN(value) ? null : value
 }
-

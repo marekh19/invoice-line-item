@@ -38,4 +38,3 @@ export const computeNet = (gross: number, vatRate: number): number => {
   const net = new Big(gross).div(divisor)
   return round2(net.toNumber())
 }
-

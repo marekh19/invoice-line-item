@@ -160,7 +160,11 @@ export const useLineItemState = ({
     // Only recalculate if gross was being edited
     if (editingField !== 'gross') return
 
-    const amounts = computeAmounts('gross', editingValue, effectiveValue.vatRate)
+    const amounts = computeAmounts(
+      'gross',
+      editingValue,
+      effectiveValue.vatRate,
+    )
     commit({ ...amounts, vatRate: effectiveValue.vatRate })
   }
 
@@ -172,9 +176,12 @@ export const useLineItemState = ({
     setHasUserInteracted(true)
 
     // Use current effective net (could be from pending or editing state)
-    const currentNet = editingField === 'net' ? editingValue : effectiveValue.net
+    const currentNet =
+      editingField === 'net' ? editingValue : effectiveValue.net
     const newGross =
-      currentNet !== null ? computeGross(currentNet, newRate) : effectiveValue.gross
+      currentNet !== null
+        ? computeGross(currentNet, newRate)
+        : effectiveValue.gross
 
     commit({ net: currentNet, gross: newGross, vatRate: newRate })
   }
@@ -189,7 +196,11 @@ export const useLineItemState = ({
 
     const correctedGross = computeGross(currentNet, effectiveValue.vatRate)
     setHasUserInteracted(true)
-    commit({ net: currentNet, gross: correctedGross, vatRate: effectiveValue.vatRate })
+    commit({
+      net: currentNet,
+      gross: correctedGross,
+      vatRate: effectiveValue.vatRate,
+    })
   }
 
   return {
