@@ -4,18 +4,18 @@ import { computeGross, computeNet } from '@/features/invoicing/utils/vat'
 import { toNumberOrNull } from '@/features/invoicing/utils/money'
 
 type UseLineItemStateOptions = {
-  /** The controlled value from parent - source of truth */
+  /** The value from parent - source of truth for confirmed state */
   value: LineItemValue
   /** Callback when values change (on commit events: blur, rate change) */
   onChange?: (value: LineItemValue) => void
 }
 
 type UseLineItemStateReturn = {
-  /** Current net value (editing value or prop value) */
+  /** Current net value to display */
   net: number | null
-  /** Current gross value (editing value or prop value) */
+  /** Current gross value to display */
   gross: number | null
-  /** Current VAT rate (always from props) */
+  /** Current VAT rate to display */
   vatRate: number
   /** Whether user has made any changes (for validation purposes) */
   hasUserInteracted: boolean
@@ -51,29 +51,39 @@ const computeAmounts = (
       }
 
 /**
+ * Checks if two LineItemValue objects have different values.
+ */
+const valuesDiffer = (a: LineItemValue, b: LineItemValue): boolean =>
+  a.net !== b.net || a.gross !== b.gross || a.vatRate !== b.vatRate
+
+/**
  * Hook for managing line item state with VAT calculations.
  *
- * ## Controlled Component Pattern
+ * ## Controlled with Optimistic State Pattern
  *
- * This hook implements a controlled component pattern where:
- * - The `value` prop is the source of truth (owned by parent)
- * - Local state only tracks in-progress editing (what user is typing)
- * - On commit (blur, VAT change), `onChange` is called with new values
- * - Parent updates its state, new props flow back down
+ * This hook implements a "controlled with optimistic state" pattern:
+ * - The `value` prop represents the confirmed state (from parent/server)
+ * - `pendingValue` holds committed changes waiting for parent confirmation
+ * - Display shows: editing value > pending value > prop value
+ * - When props change externally, pending state is cleared
+ *
+ * This pattern allows the component to:
+ * 1. Work standalone (even if parent ignores onChange)
+ * 2. React to external prop changes (server refetch)
+ * 3. Integrate with form libraries (which update props on change)
  *
  * ## Key behaviors:
  *
- * 1. **Source of truth**: Props are always the source of truth.
- *    Local editing state is only used while user is actively typing.
+ * 1. **Optimistic updates**: After commit, component shows the new value
+ *    immediately, even before parent updates props.
  *
- * 2. **Net wins for VAT changes**: When VAT rate changes, gross is recalculated from net.
+ * 2. **External sync**: When props change (different from pending),
+ *    all internal state is reset to adopt the new external value.
  *
- * 3. **Dirty tracking**: Only recalculates on blur if the field was actually modified.
+ * 3. **Net wins for VAT changes**: When VAT rate changes, gross is
+ *    recalculated from net.
  *
- * 4. **Prop sync**: When `value` prop changes externally (e.g., server refetch),
- *    internal editing state is cleared and validation state is reset.
- *
- * 5. **Precise math**: Uses big.js internally for accurate decimal calculations.
+ * 4. **Precise math**: Uses big.js internally for accurate decimal calculations.
  *
  * @see /docs/04-reasoning.md for detailed explanation of the recalculation strategy
  */
@@ -81,43 +91,46 @@ export const useLineItemState = ({
   value,
   onChange,
 }: UseLineItemStateOptions): UseLineItemStateReturn => {
-  // Track the previous value to detect external prop changes
-  // This pattern is recommended by React docs for syncing state with props
-  // See: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
-  const [prevValue, setPrevValue] = useState(value)
+  // Track the previous prop value to detect external changes
+  const [prevPropValue, setPrevPropValue] = useState(value)
 
-  // Editing state: tracks what user is typing before commit (blur)
-  // Only one field can be edited at a time
+  // Pending value: committed changes waiting for parent confirmation
+  // This allows the component to show edited values even if parent
+  // doesn't immediately update the value prop
+  const [pendingValue, setPendingValue] = useState<LineItemValue | null>(null)
+
+  // Editing state: what user is currently typing (before blur/commit)
   const [editingField, setEditingField] = useState<'net' | 'gross' | null>(null)
   const [editingValue, setEditingValue] = useState<number | null>(null)
 
   // Track if user has interacted (for validation - only validate initial data)
   const [hasUserInteracted, setHasUserInteracted] = useState(false)
 
-  // Detect external prop changes (e.g., server refetch) and reset state
-  // If value changed and it's different from what we last tracked, it's external
-  if (
-    value.net !== prevValue.net ||
-    value.gross !== prevValue.gross ||
-    value.vatRate !== prevValue.vatRate
-  ) {
-    setPrevValue(value)
-    setHasUserInteracted(false)
+  // Detect external prop changes (server refetch or parent state update)
+  // Reset all internal state when props change from outside
+  if (valuesDiffer(value, prevPropValue)) {
+    setPrevPropValue(value)
+    setPendingValue(null) // Parent confirmed (or sent new data), clear pending
     setEditingField(null)
     setEditingValue(null)
+    setHasUserInteracted(false)
   }
 
-  // Display values: use editing value while editing, otherwise prop value
-  const net = editingField === 'net' ? editingValue : value.net
-  const gross = editingField === 'gross' ? editingValue : value.gross
-  const vatRate = value.vatRate // Always from props
+  // Effective value: what we consider the "current" value
+  // Priority: pending value (if set) > prop value
+  const effectiveValue = pendingValue ?? value
+
+  // Display values: editing value while typing, otherwise effective value
+  const net = editingField === 'net' ? editingValue : effectiveValue.net
+  const gross = editingField === 'gross' ? editingValue : effectiveValue.gross
+  const vatRate = effectiveValue.vatRate
 
   /**
-   * Commits a new value by updating prevValue and calling onChange.
-   * Updating prevValue prevents the external change detection from triggering.
+   * Commits a new value by setting it as pending and notifying parent.
+   * The pending value will be displayed until parent updates props.
    */
   const commit = (newValue: LineItemValue) => {
-    setPrevValue(newValue)
+    setPendingValue(newValue)
     setEditingField(null)
     setEditingValue(null)
     onChange?.(newValue)
@@ -139,28 +152,29 @@ export const useLineItemState = ({
     // Only recalculate if net was being edited
     if (editingField !== 'net') return
 
-    const amounts = computeAmounts('net', editingValue, value.vatRate)
-    commit({ ...amounts, vatRate: value.vatRate })
+    const amounts = computeAmounts('net', editingValue, effectiveValue.vatRate)
+    commit({ ...amounts, vatRate: effectiveValue.vatRate })
   }
 
   const handleGrossBlur = () => {
     // Only recalculate if gross was being edited
     if (editingField !== 'gross') return
 
-    const amounts = computeAmounts('gross', editingValue, value.vatRate)
-    commit({ ...amounts, vatRate: value.vatRate })
+    const amounts = computeAmounts('gross', editingValue, effectiveValue.vatRate)
+    commit({ ...amounts, vatRate: effectiveValue.vatRate })
   }
 
   /**
    * Handles VAT rate change.
-   * Uses the currently displayed net value (editing or prop) to calculate new gross.
+   * Uses the current effective net value to calculate new gross.
    */
   const handleVatRateChange = (newRate: number) => {
     setHasUserInteracted(true)
 
-    // Use currently displayed net value for calculation
-    const currentNet = editingField === 'net' ? editingValue : value.net
-    const newGross = currentNet !== null ? computeGross(currentNet, newRate) : value.gross
+    // Use current effective net (could be from pending or editing state)
+    const currentNet = editingField === 'net' ? editingValue : effectiveValue.net
+    const newGross =
+      currentNet !== null ? computeGross(currentNet, newRate) : effectiveValue.gross
 
     commit({ net: currentNet, gross: newGross, vatRate: newRate })
   }
@@ -170,11 +184,12 @@ export const useLineItemState = ({
    * Use when initial data from server has mismatched net/gross values.
    */
   const fixGross = () => {
-    if (value.net === null) return
+    const currentNet = effectiveValue.net
+    if (currentNet === null) return
 
-    const correctedGross = computeGross(value.net, value.vatRate)
+    const correctedGross = computeGross(currentNet, effectiveValue.vatRate)
     setHasUserInteracted(true)
-    commit({ net: value.net, gross: correctedGross, vatRate: value.vatRate })
+    commit({ net: currentNet, gross: correctedGross, vatRate: effectiveValue.vatRate })
   }
 
   return {

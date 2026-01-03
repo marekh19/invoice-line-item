@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -14,30 +13,11 @@ import type { LineItemValue } from '../types'
 type OnChangeMock = Mock<(value: LineItemValue) => void>
 
 /**
- * Controlled wrapper that properly updates state when onChange is called.
- * This simulates how a real parent component would behave.
- */
-function ControlledLineItem({
-  initialValue,
-  onChangeSpy,
-  ...props
-}: Omit<React.ComponentProps<typeof LineItem>, 'value' | 'onChange'> & {
-  initialValue: LineItemValue
-  onChangeSpy: OnChangeMock
-}) {
-  const [value, setValue] = useState(initialValue)
-
-  const handleChange = (newValue: LineItemValue) => {
-    setValue(newValue)
-    onChangeSpy(newValue)
-  }
-
-  return <LineItem value={value} onChange={handleChange} {...props} />
-}
-
-/**
- * Renders the LineItem component in controlled mode with proper state management.
- * onChange calls update the internal state, simulating a real parent component.
+ * Renders the LineItem component wrapped in MantineProvider.
+ *
+ * The component uses optimistic state internally, so it will retain
+ * edited values even if the parent doesn't update the value prop.
+ * This makes it work correctly in both controlled and uncontrolled scenarios.
  */
 function renderLineItem(
   props: Partial<Omit<React.ComponentProps<typeof LineItem>, 'onChange'>> & {
@@ -46,15 +26,10 @@ function renderLineItem(
   },
 ) {
   const onChange = props.onChange ?? vi.fn<(value: LineItemValue) => void>()
-  const { value, ...rest } = props
 
   const result = render(
     <MantineProvider>
-      <ControlledLineItem
-        initialValue={value}
-        onChangeSpy={onChange}
-        {...rest}
-      />
+      <LineItem {...props} onChange={onChange} />
     </MantineProvider>,
   )
 
@@ -1036,5 +1011,145 @@ describe('LineItem - Prop Synchronization', () => {
 
     // Error should reappear (interaction state was reset)
     expect(getFixButton()).toBeVisible()
+  })
+})
+
+// =============================================================================
+// OPTIMISTIC STATE (parent doesn't update props)
+// =============================================================================
+
+describe('LineItem - Optimistic State', () => {
+  it('retains committed value even when parent does not update props', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn() // Just records calls, doesn't update props
+
+    // Render with static props (simulating parent that ignores onChange)
+    render(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 100, gross: 121, vatRate: 21 }}
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    const { netInput, grossInput } = getInputs()
+
+    // Initial values
+    expect(netInput).toHaveValue('100.00')
+    expect(grossInput).toHaveValue('121.00')
+
+    // User edits net value and blurs
+    await typeValue(user, netInput, '200')
+    await user.tab() // blur
+
+    // Component should show the new values (optimistic state)
+    // even though parent didn't update the value prop
+    expect(netInput).toHaveValue('200.00')
+    expect(grossInput).toHaveValue('242.00')
+
+    // onChange was called with the new values
+    expect(onChange).toHaveBeenCalledWith({
+      net: 200,
+      gross: 242,
+      vatRate: 21,
+    })
+  })
+
+  it('retains value after multiple edits without prop updates', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 100, gross: 121, vatRate: 21 }}
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    const { netInput, grossInput } = getInputs()
+
+    // First edit
+    await typeValue(user, netInput, '200')
+    await user.tab()
+    expect(netInput).toHaveValue('200.00')
+    expect(grossInput).toHaveValue('242.00')
+
+    // Second edit
+    await typeValue(user, grossInput, '300')
+    await user.tab()
+    expect(grossInput).toHaveValue('300.00')
+    expect(netInput).toHaveValue('247.93') // 300 / 1.21
+
+    // Both edits were reported
+    expect(onChange).toHaveBeenCalledTimes(2)
+  })
+
+  it('clears optimistic state when external props change', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    const { rerender } = render(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 100, gross: 121, vatRate: 21 }}
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    const { netInput, grossInput } = getInputs()
+
+    // User makes an edit
+    await typeValue(user, netInput, '200')
+    await user.tab()
+    expect(netInput).toHaveValue('200.00')
+
+    // Server sends new data (simulating refetch)
+    rerender(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 500, gross: 605, vatRate: 21 }}
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    // Component should adopt the new server values, clearing optimistic state
+    expect(netInput).toHaveValue('500.00')
+    expect(grossInput).toHaveValue('605.00')
+  })
+
+  it('retains VAT rate change even when parent does not update props', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 100, gross: 121, vatRate: 21 }}
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    const { netInput, grossInput, vatSelect } = getInputs()
+
+    // Change VAT rate
+    await selectVatRate(user, '10%')
+
+    // Values should reflect the new rate (optimistic update)
+    expect(netInput).toHaveValue('100.00')
+    expect(grossInput).toHaveValue('110.00') // 100 * 1.10
+    expect(vatSelect).toHaveValue('10%')
+
+    // onChange was called
+    expect(onChange).toHaveBeenCalledWith({
+      net: 100,
+      gross: 110,
+      vatRate: 10,
+    })
   })
 })

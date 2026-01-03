@@ -96,7 +96,7 @@ In Example 2, the user "established" the net price by working backwards from gro
 2. User changes VAT to 10%
 3. → Net stays 100, gross becomes 110 ✓
 
-## Dirty Tracking: Preventing Rounding Drift
+## Editing State: Preventing Rounding Drift
 
 ### The Problem
 
@@ -109,17 +109,16 @@ Due to rounding, converting between net and gross is not always reversible:
 
 This "rounding drift" occurs because each blur was triggering recalculation, even without user changes.
 
-### Solution: Dirty Field Tracking
+### Solution: Editing Field Tracking
 
-We track whether a field has been modified since the last commit:
+We track which field is actively being edited:
 
 ```typescript
-const [dirtyField, setDirtyField] = useState<'net' | 'gross' | null>(null)
+const [editingField, setEditingField] = useState<'net' | 'gross' | null>(null)
 
 const handleNetBlur = () => {
-  if (dirtyField !== 'net') return  // Skip if not modified
+  if (editingField !== 'net') return  // Skip if not being edited
   // ... recalculate and commit
-  setDirtyField(null)
 }
 ```
 
@@ -131,8 +130,8 @@ const handleNetBlur = () => {
 |-------------|--------|
 | Edit **net** → blur | Gross is recalculated from net |
 | Edit **gross** → blur | Net is recalculated from gross |
-| Click **net** (no edit) → blur | Nothing happens (field not dirty) |
-| Click **gross** (no edit) → blur | Nothing happens (field not dirty) |
+| Click **net** (no edit) → blur | Nothing happens (field not being edited) |
+| Click **gross** (no edit) → blur | Nothing happens (field not being edited) |
 | Change **VAT rate** | Gross is recalculated from net (always triggers) |
 
 ---
@@ -184,40 +183,90 @@ When initial data is inconsistent, a fix button appears next to the gross field:
 
 ---
 
-## Prop Synchronization: Handling Server Refetch
+## State Management: Controlled with Optimistic State
 
 ### The Problem
 
-When data is fetched from the server and the component re-renders with new `value` props, the internal state needs to sync. Without this, a server refetch would be ignored.
+We need a component that:
+1. Accepts data from parent/server (`value` prop)
+2. Allows local editing without requiring parent to update immediately
+3. Commits changes via `onChange` callback
+4. Reacts to external prop changes (server refetch)
 
-### Solution: useEffect Sync
+A purely controlled component (parent owns all state) breaks if the parent doesn't update props in response to `onChange`. A purely uncontrolled component doesn't react to external prop changes.
 
-We synchronize internal state when `initialValue` prop changes:
+### Solution: Controlled with Optimistic State
+
+We implement a hybrid pattern where:
+- Props represent the **confirmed** state (from parent/server)
+- Internal `pendingValue` holds **committed but unconfirmed** changes
+- Display shows: `editingValue > pendingValue > propValue`
 
 ```typescript
-useEffect(() => {
-  setNet(initialValue.net)
-  setGross(initialValue.gross)
-  setVatRate(initialValue.vatRate)
-  setDirtyField(null)
+const [prevPropValue, setPrevPropValue] = useState(value)
+const [pendingValue, setPendingValue] = useState<LineItemValue | null>(null)
+const [editingField, setEditingField] = useState<'net' | 'gross' | null>(null)
+const [editingValue, setEditingValue] = useState<number | null>(null)
+
+// Detect external prop changes and reset internal state
+if (valuesDiffer(value, prevPropValue)) {
+  setPrevPropValue(value)
+  setPendingValue(null)      // Parent confirmed, clear pending
+  setEditingField(null)
+  setEditingValue(null)
   setHasUserInteracted(false)
-}, [initialValue.net, initialValue.gross, initialValue.vatRate])
+}
+
+// Effective value: pending if set, otherwise props
+const effectiveValue = pendingValue ?? value
+
+// Display: editing value while typing, otherwise effective value
+const displayNet = editingField === 'net' ? editingValue : effectiveValue.net
+
+// On commit: set pending and notify parent
+const commit = (newValue: LineItemValue) => {
+  setPendingValue(newValue)  // Show this until props update
+  setEditingField(null)
+  onChange?.(newValue)
+}
 ```
 
-This ensures:
-- New server data is reflected immediately
-- Interaction state is reset (validation re-runs on new data)
-- Dirty tracking is cleared
+### How It Works
 
-### Alternative: Key-based Remount
+```
+User edits → commit() → pendingValue set → component shows new value
+                      → onChange() called → parent may or may not update
 
-Consumers can also force a full remount using React keys:
-
-```tsx
-<LineItem key={invoice.id} value={invoice.lineItem} />
+If parent updates props → pendingValue cleared → show new props
+If parent ignores       → pendingValue persists → user sees their edits ✓
 ```
 
-Both approaches work. The `useEffect` approach is less disruptive (preserves focus, animations), while key-based remount is simpler but fully resets the component.
+### Why This Pattern?
+
+| Requirement | How It's Met |
+|-------------|--------------|
+| Works standalone | `pendingValue` retains edits even if parent ignores `onChange` |
+| Reacts to external changes | When props differ from previous, all internal state resets |
+| Form library compatible | Works with react-hook-form Controller (which updates props) |
+| No useEffect sync | Uses React-recommended "adjust state during render" pattern |
+
+### Comparison with Alternatives
+
+| Approach | Standalone | External Sync | Complexity |
+|----------|------------|---------------|------------|
+| Pure controlled | ❌ Breaks | ✅ Automatic | Low |
+| Pure uncontrolled | ✅ Works | ❌ Ignores | Low |
+| Key-based reset | ✅ Works | ⚠️ Manual | Low |
+| **Optimistic state** | ✅ Works | ✅ Automatic | Medium |
+
+The optimistic state pattern is slightly more complex but provides the best of both worlds.
+
+### Server Refetch Behavior
+
+When the parent passes new props (e.g., after server refetch):
+- `pendingValue` is cleared (new server data takes precedence)
+- `editingField`/`editingValue` are cleared
+- `hasUserInteracted` resets (validation re-runs on new data)
 
 ---
 
