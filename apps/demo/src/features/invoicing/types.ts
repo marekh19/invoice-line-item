@@ -1,0 +1,40 @@
+/**
+ * Represents the value of a line item with net, gross amounts and VAT rate.
+ *
+ * Net and gross are in major currency units (e.g., 123.45 for $123.45).
+ * Use `null` to represent an empty/cleared field.
+ */
+export interface LineItemValue {
+  net: number | null
+  gross: number | null
+  vatRate: number
+}
+
+/**
+ * VAT rate option for the dropdown.
+ * Value is the percentage (e.g., 21 for 21%).
+ */
+export interface VatRateOption {
+  value: number
+  label: string
+}
+
+/**
+ * Tracks which field was last edited by the user.
+ * Used to determine the source of truth for recalculations.
+ *
+ * - null = pristine state, treat as 'net'
+ * - 'net' = net was last edited, gross should be computed from net
+ * - 'gross' = gross was last edited, net should be computed from gross
+ */
+export type LastEdited = 'net' | 'gross' | null
+
+/**
+ * Internal state used by the LineItem hook.
+ */
+export interface LineItemState {
+  net: number | null
+  gross: number | null
+  vatRate: number
+  lastEdited: LastEdited
+}
