@@ -175,6 +175,7 @@ export const LineItem = ({
         onBlur={handleGrossBlur}
         disabled={disabled}
         readOnly={isReadOnly}
+        error={hasInitialDataError}
         {...commonInputProps}
       />
       <Select
