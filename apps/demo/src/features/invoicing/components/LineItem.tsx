@@ -1,5 +1,13 @@
+import { useId } from 'react'
 import { WrenchIcon } from 'lucide-react'
-import { ActionIcon, NumberInput, Select, Tooltip } from '@repo/ui/components'
+import {
+  ActionIcon,
+  Input,
+  NumberInput,
+  Select,
+  Tooltip,
+} from '@repo/ui/components'
+import type { ReactNode } from 'react'
 import type { NumberInputProps } from '@repo/ui/components'
 import type {
   FieldLabels,
@@ -14,6 +22,7 @@ import {
   DEFAULT_LABELS,
   DEFAULT_VAT_RATES,
 } from '@/features/invoicing/constants'
+import { cn } from '@/utils/cn'
 
 const commonInputPropsFactory = (
   unit?: UnitDisplay,
@@ -46,6 +55,8 @@ type Props = {
   hasVisibleLabels?: boolean
   /** If true fields are not editable but not disabled. False by default. */
   isReadOnly?: boolean
+  /** Slot for putting any action buttons after inputs. */
+  children?: ReactNode
 }
 
 /**
@@ -81,6 +92,7 @@ export const LineItem = ({
   labels = DEFAULT_LABELS,
   hasVisibleLabels = true,
   isReadOnly = false,
+  children,
 }: Props) => {
   const {
     net,
@@ -111,43 +123,62 @@ export const LineItem = ({
 
   const commonInputProps = commonInputPropsFactory(unit)
 
-  // When labels are hidden, use them as aria-labels for accessibility
-  const labelProps = hasVisibleLabels
-    ? {
-        net: { label: labels.net },
-        gross: { label: labels.gross },
-        vatRate: { label: labels.vatRate },
-      }
-    : {
-        net: { 'aria-label': labels.net },
-        gross: { 'aria-label': labels.gross },
-        vatRate: { 'aria-label': labels.vatRate },
-      }
+  const baseId = useId()
+  const ids = {
+    net: `${baseId}-net`,
+    gross: `${baseId}-gross`,
+    vatRate: `${baseId}-vatRate`,
+  }
 
   return (
-    <div className="flex gap-4 items-start" data-testid="line-item">
+    <div
+      className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-x-4 gap-y-1 items-start"
+      data-testid="line-item"
+    >
+      {/* Row 1: Labels */}
+      <Input.Label
+        htmlFor={ids.net}
+        className={cn(!hasVisibleLabels && 'sr-only')}
+      >
+        {labels.net}
+      </Input.Label>
+      <Input.Label
+        htmlFor={ids.gross}
+        className={cn(!hasVisibleLabels && 'sr-only')}
+      >
+        {labels.gross}
+      </Input.Label>
+      <Input.Label
+        htmlFor={ids.vatRate}
+        className={cn(!hasVisibleLabels && 'sr-only')}
+      >
+        {labels.vatRate}
+      </Input.Label>
+      <div aria-hidden="true" />
+
+      {/* Row 2: inputs + actions */}
       <NumberInput
+        id={ids.net}
         data-testid="line-item-net"
         value={net ?? undefined}
         onChange={handleNetChange}
         onBlur={handleNetBlur}
         disabled={disabled}
         readOnly={isReadOnly}
-        {...labelProps.net}
         {...commonInputProps}
       />
       <NumberInput
+        id={ids.gross}
         data-testid="line-item-gross"
         value={gross ?? undefined}
         onChange={handleGrossChange}
         onBlur={handleGrossBlur}
         disabled={disabled}
         readOnly={isReadOnly}
-        error={hasInitialDataError ? labels.grossError : undefined}
-        {...labelProps.gross}
         {...commonInputProps}
       />
       <Select
+        id={ids.vatRate}
         data-testid="line-item-vat-rate"
         value={String(vatRate)}
         onChange={(selectedValue) => {
@@ -159,23 +190,32 @@ export const LineItem = ({
         disabled={disabled}
         readOnly={isReadOnly}
         allowDeselect={false}
-        {...labelProps.vatRate}
       />
-      {hasInitialDataError && (
-        <Tooltip label={labels.fixButton}>
-          <ActionIcon
-            data-testid="line-item-fix-button"
-            variant="filled"
-            color="red"
-            onClick={fixGross}
-            disabled={disabled}
-            aria-label={labels.fixButton}
-            className="self-end mb-6"
-          >
-            <WrenchIcon className="size-4" />
-          </ActionIcon>
-        </Tooltip>
-      )}
+      <div className="flex items-center gap-1 self-center justify-self-end">
+        {hasInitialDataError && (
+          <Tooltip label={labels.fixButton}>
+            <ActionIcon
+              data-testid="line-item-fix-button"
+              variant="filled"
+              color="red"
+              onClick={fixGross}
+              disabled={disabled || isReadOnly}
+              aria-label={labels.fixButton}
+            >
+              <WrenchIcon className="size-4" />
+            </ActionIcon>
+          </Tooltip>
+        )}
+        {children}
+      </div>
+
+      {/* Row 3: Field Errors; for now only error for gross is used  */}
+      <div aria-hidden="true" />
+      <Input.Error>
+        {hasInitialDataError ? labels.grossError : undefined}
+      </Input.Error>
+      <div aria-hidden="true" />
+      <div aria-hidden="true" />
     </div>
   )
 }

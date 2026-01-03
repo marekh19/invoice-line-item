@@ -75,24 +75,25 @@ export const InvoiceForm = ({ invoice, vatRates }: Props) => {
                 value={field}
                 vatRates={vatRates}
                 unit={{ suffix: 'Kč' }}
-                hasVisibleLabels={index === 0}
+                // hasVisibleLabels={index === 0}
+                hasVisibleLabels={true}
                 isReadOnly={!isEditing}
                 onChange={(newValue) => handleLineChange(index, newValue)}
-              />
-              {isEditing && (
-                <Tooltip label="Remove line">
-                  <ActionIcon
-                    variant="subtle"
-                    color="red"
-                    onClick={() => handleRemove(index)}
-                    disabled={fields.length <= 1}
-                    aria-label="Remove line"
-                    className={index === 0 ? 'mb-6' : ''}
-                  >
-                    <Trash2Icon className="size-4" />
-                  </ActionIcon>
-                </Tooltip>
-              )}
+              >
+                {isEditing && (
+                  <Tooltip label="Remove line">
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      onClick={() => handleRemove(index)}
+                      disabled={fields.length <= 1}
+                      aria-label="Remove line"
+                    >
+                      <Trash2Icon className="size-4" />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </LineItem>
             </div>
           ))}
         </div>

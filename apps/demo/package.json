@@ -25,11 +25,13 @@
     "@tanstack/react-router-devtools": "^1.132.0",
     "@tanstack/router-plugin": "^1.132.0",
     "big.js": "^7.0.1",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.69.0",
     "storybook": "^10.1.11",
+    "tailwind-merge": "^3.4.0",
     "zod": "^4.3.4"
   },
   "devDependencies": {
