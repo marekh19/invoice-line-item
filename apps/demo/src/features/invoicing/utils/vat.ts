@@ -39,19 +39,3 @@ export const computeNet = (gross: number, vatRate: number): number => {
   return round2(net.toNumber())
 }
 
-/**
- * Computes the VAT amount from net amount and VAT rate.
- *
- * Formula: vatAmount = net * (vatRate / 100)
- *
- * @param net - The net amount (without VAT)
- * @param vatRate - The VAT rate as a percentage (e.g., 21 for 21%)
- * @returns The VAT amount, rounded to 2 decimal places
- *
- * @example
- * computeVatAmount(100, 21) // 21.00
- */
-export const computeVatAmount = (net: number, vatRate: number): number => {
-  const vatAmount = new Big(net).times(new Big(vatRate).div(100))
-  return round2(vatAmount.toNumber())
-}

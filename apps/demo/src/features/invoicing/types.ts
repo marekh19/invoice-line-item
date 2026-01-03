@@ -20,19 +20,6 @@ export type VatRateOption = {
 }
 
 /**
- * Internal state used by the useLineItemState hook.
- */
-export type LineItemState = {
-  net: number | null
-  gross: number | null
-  vatRate: number
-  /** Whether the field has been modified since last commit */
-  dirtyField: 'net' | 'gross' | null
-  /** Whether user has interacted with the component */
-  hasUserInteracted: boolean
-}
-
-/**
  * Prefix / suffix unit used next to the value in net and gross inputs in LineItem component
  */
 export type UnitDisplay = {

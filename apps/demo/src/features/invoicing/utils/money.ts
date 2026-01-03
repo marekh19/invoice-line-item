@@ -45,13 +45,3 @@ export const toNumberOrNull = (
   return Number.isNaN(value) ? null : value
 }
 
-/**
- * Formats a number for display, ensuring consistent decimal places.
- * Returns undefined for null values (allows input to show as empty).
- *
- * @param value - The number to format
- * @returns The number or undefined
- */
-export const formatForDisplay = (value: number | null): number | undefined => {
-  return value === null ? undefined : value
-}

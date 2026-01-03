@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatForDisplay, round2, toNumberOrNull } from './money'
+import { round2, toNumberOrNull } from './money'
 
 describe('round2', () => {
   it('rounds to 2 decimal places', () => {
@@ -54,16 +54,5 @@ describe('toNumberOrNull', () => {
 
   it('returns null for non-numeric strings', () => {
     expect(toNumberOrNull('abc')).toBeNull()
-  })
-})
-
-describe('formatForDisplay', () => {
-  it('returns undefined for null', () => {
-    expect(formatForDisplay(null)).toBeUndefined()
-  })
-
-  it('returns the number for valid values', () => {
-    expect(formatForDisplay(100)).toBe(100)
-    expect(formatForDisplay(0)).toBe(0)
   })
 })

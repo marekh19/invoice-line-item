@@ -9,7 +9,6 @@ import type {
   UnitDisplay,
   VatRateOption,
 } from '@/features/invoicing/types'
-import { formatForDisplay } from '@/features/invoicing/utils/money'
 import { isGrossValid } from '@/features/invoicing/utils/validation'
 import { useLineItemState } from '@/features/invoicing/hooks/useLineItemState'
 import {
@@ -128,7 +127,7 @@ export const LineItem = ({
     <div className="flex gap-4 items-start" data-testid="line-item">
       <NumberInput
         data-testid="line-item-net"
-        value={formatForDisplay(net)}
+        value={net ?? undefined}
         onChange={handleNetChange}
         onBlur={handleNetBlur}
         disabled={disabled}
@@ -137,7 +136,7 @@ export const LineItem = ({
       />
       <NumberInput
         data-testid="line-item-gross"
-        value={formatForDisplay(gross)}
+        value={gross ?? undefined}
         onChange={handleGrossChange}
         onBlur={handleGrossBlur}
         disabled={disabled}
