@@ -28,7 +28,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.69.0",
-    "storybook": "^10.1.11"
+    "storybook": "^10.1.11",
+    "zod": "^4.3.4"
   },
   "devDependencies": {
     "@storybook/react-vite": "^10.1.11",
