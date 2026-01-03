@@ -19,14 +19,14 @@ function renderLineItem(
   props: Partial<Omit<React.ComponentProps<typeof LineItem>, 'onChange'>> & {
     value: LineItemValue
     onChange?: OnChangeMock
-  }
+  },
 ) {
   const onChange = props.onChange ?? vi.fn<(value: LineItemValue) => void>()
 
   const result = render(
     <MantineProvider>
       <LineItem {...props} onChange={onChange} />
-    </MantineProvider>
+    </MantineProvider>,
   )
 
   return {
@@ -52,7 +52,7 @@ function getInputs() {
 async function typeValue(
   user: ReturnType<typeof userEvent.setup>,
   input: HTMLElement,
-  value: string
+  value: string,
 ) {
   await user.clear(input)
   await user.type(input, value)
@@ -65,7 +65,7 @@ async function typeValue(
  */
 async function selectVatRate(
   user: ReturnType<typeof userEvent.setup>,
-  rate: string
+  rate: string,
 ) {
   const { vatSelect } = getInputs()
   await user.click(vatSelect)
@@ -700,10 +700,10 @@ describe('LineItem - Additional Edge Cases', () => {
 
     // Should show custom rates (hidden: true for Mantine portal)
     expect(
-      screen.getByRole('option', { name: '7%', hidden: true })
+      screen.getByRole('option', { name: '7%', hidden: true }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('option', { name: '19%', hidden: true })
+      screen.getByRole('option', { name: '19%', hidden: true }),
     ).toBeInTheDocument()
   })
 
