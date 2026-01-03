@@ -48,10 +48,17 @@ export type UnitDisplay = {
 }
 
 /**
- * Custom labels for net, gross and VAT select fields in LineItem component
+ * Custom labels for LineItem component fields and validation messages
  */
 export type FieldLabels = {
+  /** Label for net amount input */
   net: string
+  /** Label for gross amount input */
   gross: string
+  /** Label for VAT rate select */
   vatRate: string
+  /** Error message shown when gross doesn't match calculated value */
+  grossError: string
+  /** Tooltip and aria-label for the fix button */
+  fixButton: string
 }

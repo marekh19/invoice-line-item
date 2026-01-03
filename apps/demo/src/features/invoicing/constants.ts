@@ -18,11 +18,13 @@ export const DEFAULT_VAT_RATES = [
   { value: 25, label: '25%' },
 ] as const satisfies ReadonlyArray<VatRateOption>
 
-/*
- * Default field labels for the input/select elements
+/**
+ * Default field labels for the input/select elements and validation messages
  */
 export const DEFAULT_LABELS = {
   net: 'Net amount',
   gross: 'Gross amount',
   vatRate: 'VAT rate',
+  grossError: 'Gross does not match calculation',
+  fixButton: 'Recalculate gross from net',
 } as const satisfies FieldLabels

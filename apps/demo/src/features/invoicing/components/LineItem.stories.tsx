@@ -1,4 +1,5 @@
 import { fn } from 'storybook/test'
+import { computeGross } from '../utils/vat'
 import { LineItem } from './LineItem'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { LineItemValue } from '../types'
@@ -8,13 +9,18 @@ type PlaygroundArgs = {
   initialNet: number | null
   initialGross: number | null
   initialVatRate: number
+  // Simulate bad data
+  simulateInconsistentData: boolean
   // Display
   currencyPrefix: string
   currencySuffix: string
+  hasVisibleLabels: boolean
   // Labels
   netLabel: string
   grossLabel: string
   vatRateLabel: string
+  grossErrorLabel: string
+  fixButtonLabel: string
   // State
   disabled: boolean
   // Callback
@@ -35,13 +41,18 @@ const meta: Meta<PlaygroundArgs> = {
     },
     initialGross: {
       control: { type: 'number' },
-      description: 'Initial gross amount (null = empty)',
+      description: 'Initial gross amount (auto-calculated unless inconsistent mode)',
       table: { category: 'Initial Values' },
     },
     initialVatRate: {
       control: { type: 'select' },
       options: [0, 5, 10, 15, 21, 25],
       description: 'Initial VAT rate (%)',
+      table: { category: 'Initial Values' },
+    },
+    simulateInconsistentData: {
+      control: { type: 'boolean' },
+      description: 'Simulate bad data from server (gross won\'t match net × VAT)',
       table: { category: 'Initial Values' },
     },
     currencyPrefix: {
@@ -52,6 +63,11 @@ const meta: Meta<PlaygroundArgs> = {
     currencySuffix: {
       control: { type: 'text' },
       description: 'Suffix after amounts (e.g. USD, EUR)',
+      table: { category: 'Display' },
+    },
+    hasVisibleLabels: {
+      control: { type: 'boolean' },
+      description: 'Show labels above inputs (false = use aria-labels only)',
       table: { category: 'Display' },
     },
     netLabel: {
@@ -69,6 +85,16 @@ const meta: Meta<PlaygroundArgs> = {
       description: 'Label for VAT rate selector',
       table: { category: 'Labels' },
     },
+    grossErrorLabel: {
+      control: { type: 'text' },
+      description: 'Error message for inconsistent gross amount',
+      table: { category: 'Labels' },
+    },
+    fixButtonLabel: {
+      control: { type: 'text' },
+      description: 'Tooltip and aria-label for fix button',
+      table: { category: 'Labels' },
+    },
     disabled: {
       control: { type: 'boolean' },
       description: 'Disable all inputs',
@@ -84,11 +110,15 @@ const meta: Meta<PlaygroundArgs> = {
     initialNet: 100,
     initialGross: 121,
     initialVatRate: 21,
+    simulateInconsistentData: false,
     currencyPrefix: '€',
     currencySuffix: '',
+    hasVisibleLabels: true,
     netLabel: 'Net amount',
     grossLabel: 'Gross amount',
     vatRateLabel: 'VAT rate',
+    grossErrorLabel: 'Gross amount does not match calculation',
+    fixButtonLabel: 'Fix: recalculate gross from net',
     disabled: false,
     onChange: fn(),
   },
@@ -96,34 +126,49 @@ const meta: Meta<PlaygroundArgs> = {
     initialNet,
     initialGross,
     initialVatRate,
+    simulateInconsistentData,
     currencyPrefix,
     currencySuffix,
+    hasVisibleLabels,
     netLabel,
     grossLabel,
     vatRateLabel,
+    grossErrorLabel,
+    fixButtonLabel,
     disabled,
     onChange,
-  }) => (
-    <LineItem
-      value={{
-        net: initialNet,
-        gross: initialGross,
-        vatRate: initialVatRate,
-      }}
-      unit={
-        currencyPrefix || currencySuffix
-          ? { prefix: currencyPrefix || undefined, suffix: currencySuffix || undefined }
-          : undefined
-      }
-      labels={{
-        net: netLabel,
-        gross: grossLabel,
-        vatRate: vatRateLabel,
-      }}
-      disabled={disabled}
-      onChange={onChange}
-    />
-  ),
+  }) => {
+    // Calculate correct gross, or use a wrong value if simulating inconsistent data
+    const gross =
+      simulateInconsistentData && initialNet !== null
+        ? initialNet * 2 // Obviously wrong value
+        : initialGross ?? (initialNet !== null ? computeGross(initialNet, initialVatRate) : null)
+
+    return (
+      <LineItem
+        value={{
+          net: initialNet,
+          gross,
+          vatRate: initialVatRate,
+        }}
+        unit={
+          currencyPrefix || currencySuffix
+            ? { prefix: currencyPrefix || undefined, suffix: currencySuffix || undefined }
+            : undefined
+        }
+        labels={{
+          net: netLabel,
+          gross: grossLabel,
+          vatRate: vatRateLabel,
+          grossError: grossErrorLabel,
+          fixButton: fixButtonLabel,
+        }}
+        hasVisibleLabels={hasVisibleLabels}
+        disabled={disabled}
+        onChange={onChange}
+      />
+    )
+  },
 }
 
 export default meta
@@ -134,7 +179,9 @@ type Story = StoryObj<PlaygroundArgs>
  *
  * Use the controls panel to:
  * - Set initial net/gross values and VAT rate
+ * - Toggle "Simulate Inconsistent Data" to see validation error + fix button
  * - Add currency prefix (€) or suffix (USD)
+ * - Toggle "Has Visible Labels" to show/hide labels (useful for multi-row layouts)
  * - Customize field labels for localization
  * - Toggle disabled state
  *

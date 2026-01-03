@@ -36,14 +36,28 @@ function renderLineItem(
 }
 
 /**
- * Gets the input elements by their labels
+ * Gets the input elements by their data-testid
  */
 function getInputs() {
   return {
-    netInput: screen.getByRole('textbox', { name: /net amount/i }),
-    grossInput: screen.getByRole('textbox', { name: /gross amount/i }),
-    vatSelect: screen.getByRole('textbox', { name: /vat rate/i }),
+    netInput: screen.getByTestId('line-item-net'),
+    grossInput: screen.getByTestId('line-item-gross'),
+    vatSelect: screen.getByTestId('line-item-vat-rate'),
   }
+}
+
+/**
+ * Gets the fix button if visible
+ */
+function getFixButton() {
+  return screen.getByTestId('line-item-fix-button')
+}
+
+/**
+ * Queries the fix button (returns null if not found)
+ */
+function queryFixButton() {
+  return screen.queryByTestId('line-item-fix-button')
 }
 
 /**
@@ -300,7 +314,7 @@ describe('LineItem - Net is Source of Truth for VAT Changes', () => {
 // =============================================================================
 
 describe('LineItem - Partial Data Loaded', () => {
-  it('with only net loaded, blurring net computes gross', async () => {
+  it('with only net loaded, typing same value triggers recalculation', async () => {
     const user = userEvent.setup()
     const { onChange } = renderLineItem({
       value: { net: 100, gross: null, vatRate: 21 },
@@ -308,8 +322,8 @@ describe('LineItem - Partial Data Loaded', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    // Focus and blur net without changing it
-    await user.click(netInput)
+    // Re-type the same value to mark as dirty, then blur
+    await typeValue(user, netInput, '100')
     await user.click(grossInput)
 
     expect(onChange).toHaveBeenCalledWith({
@@ -351,7 +365,7 @@ describe('LineItem - Partial Data Loaded', () => {
     })
   })
 
-  it('with only gross loaded, blurring gross computes net', async () => {
+  it('with only gross loaded, typing same value triggers recalculation', async () => {
     const user = userEvent.setup()
     const { onChange } = renderLineItem({
       value: { net: null, gross: 121, vatRate: 21 },
@@ -359,7 +373,8 @@ describe('LineItem - Partial Data Loaded', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(grossInput)
+    // Re-type the same value to mark as dirty, then blur
+    await typeValue(user, grossInput, '121')
     await user.click(netInput)
 
     expect(onChange).toHaveBeenCalledWith({
@@ -392,16 +407,17 @@ describe('LineItem - Inconsistent Initial Data', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('fixes inconsistent data when user blurs net', async () => {
+  it('fixes inconsistent data when user clicks fix button', async () => {
     const user = userEvent.setup()
     const { onChange } = renderLineItem({
       value: { net: 100, gross: 120.99, vatRate: 21 },
     })
 
-    const { netInput, grossInput } = getInputs()
+    // Fix button should be visible for inconsistent data
+    const fixButton = getFixButton()
+    expect(fixButton).toBeVisible()
 
-    await user.click(netInput)
-    await user.click(grossInput)
+    await user.click(fixButton)
 
     expect(onChange).toHaveBeenCalledWith({
       net: 100,
@@ -424,6 +440,68 @@ describe('LineItem - Inconsistent Initial Data', () => {
       vatRate: 10,
     })
   })
+
+  it('shows error state only for initial inconsistent data', () => {
+    renderLineItem({
+      value: { net: 100, gross: 120.99, vatRate: 21 }, // Inconsistent
+    })
+
+    const { grossInput } = getInputs()
+
+    // Error state should be shown
+    expect(grossInput).toHaveAttribute('aria-invalid', 'true')
+
+    // Fix button should be visible
+    expect(
+      getFixButton(),
+    ).toBeVisible()
+  })
+
+  it('hides error state once user starts editing', async () => {
+    const user = userEvent.setup()
+    renderLineItem({
+      value: { net: 100, gross: 120.99, vatRate: 21 }, // Inconsistent
+    })
+
+    const { grossInput } = getInputs()
+
+    // Initially shows error
+    expect(grossInput).toHaveAttribute('aria-invalid', 'true')
+    expect(
+      getFixButton(),
+    ).toBeVisible()
+
+    // User clears and types a new value
+    await typeValue(user, grossInput, '121')
+
+    // Error should be hidden now (user has interacted)
+    expect(grossInput).not.toHaveAttribute('aria-invalid', 'true')
+    expect(
+      queryFixButton(),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not show error during normal editing', async () => {
+    const user = userEvent.setup()
+    renderLineItem({
+      value: { net: 100, gross: 121, vatRate: 21 }, // Consistent
+    })
+
+    const { grossInput } = getInputs()
+
+    // No error initially
+    expect(grossInput).not.toHaveAttribute('aria-invalid', 'true')
+
+    // User changes gross to something "inconsistent" while typing
+    await user.clear(grossInput)
+    await user.type(grossInput, '999')
+
+    // Still no error - we don't validate during user editing
+    expect(grossInput).not.toHaveAttribute('aria-invalid', 'true')
+    expect(
+      queryFixButton(),
+    ).not.toBeInTheDocument()
+  })
 })
 
 // =============================================================================
@@ -439,7 +517,8 @@ describe('LineItem - VAT Rate Edge Cases', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(netInput)
+    // Type value to mark as dirty
+    await typeValue(user, netInput, '100')
     await user.click(grossInput)
 
     expect(onChange).toHaveBeenCalledWith({
@@ -457,7 +536,8 @@ describe('LineItem - VAT Rate Edge Cases', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(grossInput)
+    // Type value to mark as dirty
+    await typeValue(user, grossInput, '100')
     await user.click(netInput)
 
     expect(onChange).toHaveBeenCalledWith({
@@ -500,7 +580,8 @@ describe('LineItem - Rounding Stability', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(netInput)
+    // Type value to mark as dirty
+    await typeValue(user, netInput, '0.01')
     await user.click(grossInput)
 
     // 0.01 * 1.21 = 0.0121 → rounds to 0.01
@@ -519,7 +600,8 @@ describe('LineItem - Rounding Stability', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(netInput)
+    // Type value to mark as dirty
+    await typeValue(user, netInput, '33.33')
     await user.click(grossInput)
 
     // 33.33 * 1.21 = 40.3293 → 40.33
@@ -548,6 +630,40 @@ describe('LineItem - Rounding Stability', () => {
       vatRate: 10,
     })
   })
+
+  it('prevents rounding drift when clicking between fields without changes', async () => {
+    // Regression test: entering 150 gross at 15% VAT, then clicking back and forth
+    // should NOT cause 150 → 130.43 → 149.99 drift
+    const user = userEvent.setup()
+    const { onChange } = renderLineItem({
+      value: { net: null, gross: null, vatRate: 15 },
+    })
+
+    const { netInput, grossInput } = getInputs()
+
+    // Step 1: Enter gross 150, blur → net = 130.43
+    await typeValue(user, grossInput, '150')
+    await user.click(netInput)
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      net: 130.43, // 150 / 1.15
+      gross: 150,
+      vatRate: 15,
+    })
+
+    // Step 2: Click back to gross WITHOUT typing → should NOT recalculate
+    await user.click(grossInput)
+
+    // Step 3: Click back to net WITHOUT typing → should NOT recalculate
+    await user.click(netInput)
+
+    // onChange should still have the same last call (no new calls from clicking around)
+    expect(onChange).toHaveBeenCalledTimes(1)
+
+    // Verify values are still correct
+    expect(grossInput).toHaveValue('150.00')
+    expect(netInput).toHaveValue('130.43')
+  })
 })
 
 // =============================================================================
@@ -563,7 +679,8 @@ describe('LineItem - Large Numbers', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(netInput)
+    // Type value to mark as dirty
+    await typeValue(user, netInput, '999999999.99')
     await user.click(grossInput)
 
     // 999999999.99 * 1.21 = 1209999999.9879 → 1209999999.99
@@ -582,7 +699,8 @@ describe('LineItem - Large Numbers', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(grossInput)
+    // Type value to mark as dirty
+    await typeValue(user, grossInput, '1209999999.99')
     await user.click(netInput)
 
     const call = onChange.mock.calls[0][0]
@@ -737,7 +855,8 @@ describe('LineItem - Additional Edge Cases', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(netInput)
+    // Type value to mark as dirty
+    await typeValue(user, netInput, '0')
     await user.click(grossInput)
 
     expect(onChange).toHaveBeenCalledWith({
@@ -755,7 +874,8 @@ describe('LineItem - Additional Edge Cases', () => {
 
     const { netInput, grossInput } = getInputs()
 
-    await user.click(netInput)
+    // Type value to mark as dirty
+    await typeValue(user, netInput, '-100')
     await user.click(grossInput)
 
     // The calculation should still work mathematically

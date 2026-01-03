@@ -96,6 +96,94 @@ In Example 2, the user "established" the net price by working backwards from gro
 2. User changes VAT to 10%
 3. → Net stays 100, gross becomes 110 ✓
 
+## Dirty Tracking: Preventing Rounding Drift
+
+### The Problem
+
+Due to rounding, converting between net and gross is not always reversible:
+
+1. User enters gross = €150 at 15% VAT
+2. Blur → net = €130.43 (150 / 1.15, rounded)
+3. User clicks on net field (no changes)
+4. User clicks back to gross → gross = €149.99 (130.43 × 1.15, rounded) ❌
+
+This "rounding drift" occurs because each blur was triggering recalculation, even without user changes.
+
+### Solution: Dirty Field Tracking
+
+We track whether a field has been modified since the last commit:
+
+```typescript
+const [dirtyField, setDirtyField] = useState<'net' | 'gross' | null>(null)
+
+const handleNetBlur = () => {
+  if (dirtyField !== 'net') return  // Skip if not modified
+  // ... recalculate and commit
+  setDirtyField(null)
+}
+```
+
+**Result:** Clicking between fields without typing does NOT trigger recalculation. Values remain stable.
+
+### Updated Behavior Summary
+
+| User Action | Result |
+|-------------|--------|
+| Edit **net** → blur | Gross is recalculated from net |
+| Edit **gross** → blur | Net is recalculated from gross |
+| Click **net** (no edit) → blur | Nothing happens (field not dirty) |
+| Click **gross** (no edit) → blur | Nothing happens (field not dirty) |
+| Change **VAT rate** | Gross is recalculated from net (always triggers) |
+
+---
+
+## Validation: Detecting Inconsistent Initial Data
+
+### The Problem
+
+Data loaded from the server might be inconsistent (e.g., net = 100, gross = 120.99, vatRate = 21). The correct gross should be 121.
+
+We need to:
+1. Show the user that the data is inconsistent
+2. Provide a way to fix it
+3. NOT show false positives during normal editing
+
+### Solution: Validate Initial Props Only
+
+We track whether the user has interacted with the component:
+
+```typescript
+const [hasUserInteracted, setHasUserInteracted] = useState(false)
+
+// In component:
+const hasInitialDataError =
+  !hasUserInteracted && !isGrossValid(value.net, value.gross, value.vatRate)
+```
+
+### Validation Behavior
+
+| Scenario | Error Shown? |
+|----------|--------------|
+| Initial data is inconsistent | ✅ Yes |
+| User starts editing (any field) | ❌ No (error disappears) |
+| User types value that doesn't match | ❌ No (trust user input) |
+| User changes VAT rate | ❌ No (auto-recalculates) |
+
+### Fix Button
+
+When initial data is inconsistent, a fix button appears next to the gross field:
+- Shows red error state on gross input
+- Clicking fix button recalculates gross from net
+- Error disappears after any user interaction
+
+### Why This Approach?
+
+1. **No false positives**: Users won't see errors while typing intermediate values
+2. **Clear intent**: Error only appears for data that came from outside (server)
+3. **Easy recovery**: One-click fix, or user can just start editing normally
+
+---
+
 ## Future Considerations
 
 If B2C "fixed gross price" scenarios become important, we could add Option C (explicit toggle) as an enhancement. The current architecture supports this — we'd just need to add a `priceEntryMode: 'net' | 'gross'` prop and use it to determine the source of truth for VAT changes.

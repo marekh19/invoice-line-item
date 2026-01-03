@@ -17,6 +17,8 @@ type UseLineItemStateReturn = {
   gross: number | null
   /** Current VAT rate */
   vatRate: number
+  /** Whether user has made any changes (for validation purposes) */
+  hasUserInteracted: boolean
   /** Handler for net input changes (updates local state) */
   handleNetChange: (value: number | string) => void
   /** Handler for gross input changes (updates local state) */
@@ -27,6 +29,8 @@ type UseLineItemStateReturn = {
   handleGrossBlur: () => void
   /** Handler for VAT rate change (commits and recalculates) */
   handleVatRateChange: (rate: number) => void
+  /** Recalculates gross from net to fix inconsistent data */
+  fixGross: () => void
 }
 
 /**
@@ -55,13 +59,16 @@ const computeAmounts = (
  *    This provides predictable behavior aligned with standard B2B invoicing.
  *
  * 2. **Commit-based recalculation**: Recalculations happen on:
- *    - Blur of net/gross input (recalculates from the blurred field)
+ *    - Blur of net/gross input (only if value was changed)
  *    - VAT rate change (recalculates gross from net)
  *
- * 3. **Empty handling**: When a field is cleared and blurred,
+ * 3. **Dirty tracking**: Only recalculates on blur if the field was actually
+ *    modified. This prevents rounding drift when just clicking between fields.
+ *
+ * 4. **Empty handling**: When a field is cleared and blurred,
  *    the other field is also cleared for consistency.
  *
- * 4. **Precise math**: Uses big.js internally for accurate decimal calculations.
+ * 5. **Precise math**: Uses big.js internally for accurate decimal calculations.
  *
  * @see /docs/04-reasoning.md for detailed explanation of the recalculation strategy
  *
@@ -83,28 +90,45 @@ export const useLineItemState = ({
   const [net, setNet] = useState<number | null>(initialValue.net)
   const [gross, setGross] = useState<number | null>(initialValue.gross)
   const [vatRate, setVatRate] = useState<number>(initialValue.vatRate)
-  // Track last edited for potential future use, but VAT changes always use net
   const [, setLastEdited] = useState<LastEdited>(null)
+
+  // Track which field is dirty (modified since last commit)
+  const [dirtyField, setDirtyField] = useState<'net' | 'gross' | null>(null)
+
+  // Track if user has made any changes (for validation - only validate initial data)
+  const [hasUserInteracted, setHasUserInteracted] = useState(false)
 
   const handleNetChange = (value: number | string) => {
     setNet(toNumberOrNull(value))
     setLastEdited('net')
+    setDirtyField('net')
+    setHasUserInteracted(true)
   }
 
   const handleGrossChange = (value: number | string) => {
     setGross(toNumberOrNull(value))
     setLastEdited('gross')
+    setDirtyField('gross')
+    setHasUserInteracted(true)
   }
 
   const handleNetBlur = () => {
+    // Only recalculate if net was actually changed
+    if (dirtyField !== 'net') return
+
     const amounts = computeAmounts('net', net, vatRate)
     setGross(amounts.gross)
+    setDirtyField(null)
     onChange?.({ ...amounts, vatRate })
   }
 
   const handleGrossBlur = () => {
+    // Only recalculate if gross was actually changed
+    if (dirtyField !== 'gross') return
+
     const amounts = computeAmounts('gross', gross, vatRate)
     setNet(amounts.net)
+    setDirtyField(null)
     onChange?.({ ...amounts, vatRate })
   }
 
@@ -115,6 +139,8 @@ export const useLineItemState = ({
    */
   const handleVatRateChange = (newRate: number) => {
     setVatRate(newRate)
+    setHasUserInteracted(true)
+    setDirtyField(null) // VAT change commits any pending changes
 
     // Net is always the source of truth for VAT changes
     const newGross = net !== null ? computeGross(net, newRate) : gross
@@ -122,14 +148,29 @@ export const useLineItemState = ({
     onChange?.({ net, gross: newGross, vatRate: newRate })
   }
 
+  /**
+   * Fixes inconsistent data by recalculating gross from net.
+   * Use when initial data from server has mismatched net/gross values.
+   */
+  const fixGross = () => {
+    if (net === null) return
+
+    const correctedGross = computeGross(net, vatRate)
+    setGross(correctedGross)
+    setHasUserInteracted(true)
+    onChange?.({ net, gross: correctedGross, vatRate })
+  }
+
   return {
     net,
     gross,
     vatRate,
+    hasUserInteracted,
     handleNetChange,
     handleGrossChange,
     handleNetBlur,
     handleGrossBlur,
     handleVatRateChange,
+    fixGross,
   }
 }
