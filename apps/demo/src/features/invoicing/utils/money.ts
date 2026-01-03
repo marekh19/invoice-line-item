@@ -1,10 +1,5 @@
 import Big from 'big.js'
-
-/**
- * Number of decimal places for currency amounts.
- * Standard for most currencies (USD, EUR, etc.)
- */
-const CURRENCY_DECIMALS = 2
+import { CURRENCY_DECIMALS } from '@/features/invoicing/constants'
 
 /**
  * Rounds a number to 2 decimal places using banker's rounding (half-even).
@@ -18,7 +13,7 @@ const CURRENCY_DECIMALS = 2
  * round2(10.004) // 10.00
  * round2(0.1 + 0.2) // 0.30 (not 0.30000000000000004)
  */
-export function round2(value: number): number {
+export const round2 = (value: number): number => {
   return new Big(value).round(CURRENCY_DECIMALS, Big.roundHalfEven).toNumber()
 }
 
@@ -35,9 +30,9 @@ export function round2(value: number): number {
  * toNumberOrNull(undefined) // null
  * toNumberOrNull(NaN) // null
  */
-export function toNumberOrNull(
+export const toNumberOrNull = (
   value: number | string | undefined | null,
-): number | null {
+): number | null => {
   if (value === '' || value === undefined || value === null) {
     return null
   }
@@ -57,6 +52,6 @@ export function toNumberOrNull(
  * @param value - The number to format
  * @returns The number or undefined
  */
-export function formatForDisplay(value: number | null): number | undefined {
+export const formatForDisplay = (value: number | null): number | undefined => {
   return value === null ? undefined : value
 }

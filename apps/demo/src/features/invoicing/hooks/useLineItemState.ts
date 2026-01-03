@@ -3,14 +3,14 @@ import type { LastEdited, LineItemValue } from '@/features/invoicing/types'
 import { computeGross, computeNet } from '@/features/invoicing/utils/vat'
 import { toNumberOrNull } from '@/features/invoicing/utils/money'
 
-interface UseLineItemStateOptions {
+type UseLineItemStateOptions = {
   /** Initial value for the line item */
   initialValue: LineItemValue
   /** Callback when values change (on commit events: blur, rate change) */
   onChange?: (value: LineItemValue) => void
 }
 
-interface UseLineItemStateReturn {
+type UseLineItemStateReturn = {
   /** Current net value */
   net: number | null
   /** Current gross value */
@@ -76,10 +76,10 @@ const computeAmounts = (
  *   onChange: (value) => console.log('Value changed:', value)
  * })
  */
-export function useLineItemState({
+export const useLineItemState = ({
   initialValue,
   onChange,
-}: UseLineItemStateOptions): UseLineItemStateReturn {
+}: UseLineItemStateOptions): UseLineItemStateReturn => {
   const [net, setNet] = useState<number | null>(initialValue.net)
   const [gross, setGross] = useState<number | null>(initialValue.gross)
   const [vatRate, setVatRate] = useState<number>(initialValue.vatRate)

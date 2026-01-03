@@ -14,7 +14,7 @@ import { round2 } from './money'
  * computeGross(100, 21) // 121.00
  * computeGross(100, 0)  // 100.00
  */
-export function computeGross(net: number, vatRate: number): number {
+export const computeGross = (net: number, vatRate: number): number => {
   const multiplier = new Big(1).plus(new Big(vatRate).div(100))
   const gross = new Big(net).times(multiplier)
   return round2(gross.toNumber())
@@ -33,7 +33,7 @@ export function computeGross(net: number, vatRate: number): number {
  * computeNet(121, 21) // 100.00
  * computeNet(100, 0)  // 100.00
  */
-export function computeNet(gross: number, vatRate: number): number {
+export const computeNet = (gross: number, vatRate: number): number => {
   const divisor = new Big(1).plus(new Big(vatRate).div(100))
   const net = new Big(gross).div(divisor)
   return round2(net.toNumber())
@@ -51,7 +51,7 @@ export function computeNet(gross: number, vatRate: number): number {
  * @example
  * computeVatAmount(100, 21) // 21.00
  */
-export function computeVatAmount(net: number, vatRate: number): number {
+export const computeVatAmount = (net: number, vatRate: number): number => {
   const vatAmount = new Big(net).times(new Big(vatRate).div(100))
   return round2(vatAmount.toNumber())
 }

@@ -4,7 +4,7 @@
  * Net and gross are in major currency units (e.g., 123.45 for $123.45).
  * Use `null` to represent an empty/cleared field.
  */
-export interface LineItemValue {
+export type LineItemValue = {
   net: number | null
   gross: number | null
   vatRate: number
@@ -14,7 +14,7 @@ export interface LineItemValue {
  * VAT rate option for the dropdown.
  * Value is the percentage (e.g., 21 for 21%).
  */
-export interface VatRateOption {
+export type VatRateOption = {
   value: number
   label: string
 }
@@ -30,11 +30,28 @@ export interface VatRateOption {
 export type LastEdited = 'net' | 'gross' | null
 
 /**
- * Internal state used by the LineItem hook.
+ * Internal state used by the useLineItemState hook.
  */
-export interface LineItemState {
+export type LineItemState = {
   net: number | null
   gross: number | null
   vatRate: number
   lastEdited: LastEdited
+}
+
+/**
+ * Prefix / suffix unit used next to the value in net and gross inputs in LineItem component
+ */
+export type UnitDisplay = {
+  prefix?: string
+  suffix?: string
+}
+
+/**
+ * Custom labels for net, gross and VAT select fields in LineItem component
+ */
+export type FieldLabels = {
+  net: string
+  gross: string
+  vatRate: string
 }

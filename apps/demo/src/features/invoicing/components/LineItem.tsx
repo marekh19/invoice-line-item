@@ -1,31 +1,24 @@
 import { NumberInput } from '@repo/ui/components/NumberInput'
 import { Select } from '@repo/ui/components/Select'
-import type { LineItemValue, VatRateOption } from '@/features/invoicing/types'
 import type { NumberInputProps } from '@mantine/core'
+import type {
+  FieldLabels,
+  LineItemValue,
+  UnitDisplay,
+  VatRateOption,
+} from '@/features/invoicing/types'
 import { formatForDisplay } from '@/features/invoicing/utils/money'
 import { useLineItemState } from '@/features/invoicing/hooks/useLineItemState'
-
-type UnitDisplay = {
-  prefix?: string
-  suffix?: string
-}
-
-/**
- * Default VAT rate options available in the dropdown.
- */
-const DEFAULT_VAT_RATES: Array<VatRateOption> = [
-  { value: 0, label: '0%' },
-  { value: 5, label: '5%' },
-  { value: 10, label: '10%' },
-  { value: 15, label: '15%' },
-  { value: 21, label: '21%' },
-  { value: 25, label: '25%' },
-]
+import {
+  CURRENCY_DECIMALS,
+  DEFAULT_LABELS,
+  DEFAULT_VAT_RATES,
+} from '@/features/invoicing/constants'
 
 const commonInputPropsFactory = (
   unit?: UnitDisplay,
 ): Partial<NumberInputProps> => ({
-  decimalScale: 2,
+  decimalScale: CURRENCY_DECIMALS,
   fixedDecimalScale: true,
   thousandSeparator: ',',
   placeholder: '0.00',
@@ -33,17 +26,19 @@ const commonInputPropsFactory = (
   ...unit,
 })
 
-export interface LineItemProps {
+type Props = {
   /** Initial/controlled value for the line item */
   value: LineItemValue
   /** Available VAT rate options. Defaults to common rates. */
-  vatRates?: Array<VatRateOption>
+  vatRates?: ReadonlyArray<VatRateOption>
   /** Callback when values change (on commit: blur or rate change) */
   onChange?: (value: LineItemValue) => void
   /** If true, inputs are disabled */
   disabled?: boolean
   /* Optional unit suffix / prefix to be displayed */
   unit?: UnitDisplay
+  /* Field labels. Defaults to predefined ones */
+  labels?: FieldLabels
 }
 
 /**
@@ -69,13 +64,14 @@ export interface LineItemProps {
  *   onChange={(value) => console.log('Updated:', value)}
  * />
  */
-export function LineItem({
+export const LineItem = ({
   value,
   vatRates = DEFAULT_VAT_RATES,
   onChange,
   disabled = false,
   unit,
-}: LineItemProps) {
+  labels = DEFAULT_LABELS,
+}: Props) => {
   const {
     net,
     gross,
@@ -101,7 +97,7 @@ export function LineItem({
   return (
     <div className="flex gap-4 items-end">
       <NumberInput
-        label="Net amount"
+        label={labels.net}
         value={formatForDisplay(net)}
         onChange={handleNetChange}
         onBlur={handleNetBlur}
@@ -109,7 +105,7 @@ export function LineItem({
         {...commonInputProps}
       />
       <NumberInput
-        label="Gross amount"
+        label={labels.gross}
         value={formatForDisplay(gross)}
         onChange={handleGrossChange}
         onBlur={handleGrossBlur}
@@ -117,7 +113,7 @@ export function LineItem({
         {...commonInputProps}
       />
       <Select
-        label="VAT rate"
+        label={labels.vatRate}
         value={String(vatRate)}
         onChange={(selectedValue) => {
           if (selectedValue !== null) {
