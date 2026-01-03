@@ -75,8 +75,7 @@ export const InvoiceForm = ({ invoice, vatRates }: Props) => {
                 value={field}
                 vatRates={vatRates}
                 unit={{ suffix: 'Kč' }}
-                // hasVisibleLabels={index === 0}
-                hasVisibleLabels={true}
+                hasVisibleLabels={index === 0}
                 isReadOnly={!isEditing}
                 onChange={(newValue) => handleLineChange(index, newValue)}
               >

@@ -52,14 +52,14 @@ function createDefaultInvoice(): Invoice {
       {
         id: crypto.randomUUID(),
         net: 200,
-        gross: 300,
-        vatRate: 10,
+        gross: 242,
+        vatRate: 21,
       },
       {
         id: crypto.randomUUID(),
-        net: 100,
-        gross: 110,
-        vatRate: 10,
+        net: null,
+        gross: null,
+        vatRate: 0,
       },
     ],
   }

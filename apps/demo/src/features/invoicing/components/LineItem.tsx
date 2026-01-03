@@ -128,38 +128,48 @@ export const LineItem = ({
     net: `${baseId}-net`,
     gross: `${baseId}-gross`,
     vatRate: `${baseId}-vatRate`,
-  }
+  } as const
 
   return (
     <div
       className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-x-4 gap-y-1 items-start"
       data-testid="line-item"
     >
-      {/* Row 1: Labels */}
+      {/* Row 1: Labels - explicitly placed in row 1 */}
       <Input.Label
         htmlFor={ids.net}
-        className={cn(!hasVisibleLabels && 'sr-only')}
+        className={cn(
+          'row-start-1 col-start-1',
+          !hasVisibleLabels && 'sr-only',
+        )}
       >
         {labels.net}
       </Input.Label>
       <Input.Label
         htmlFor={ids.gross}
-        className={cn(!hasVisibleLabels && 'sr-only')}
+        className={cn(
+          'row-start-1 col-start-2',
+          !hasVisibleLabels && 'sr-only',
+        )}
       >
         {labels.gross}
       </Input.Label>
       <Input.Label
         htmlFor={ids.vatRate}
-        className={cn(!hasVisibleLabels && 'sr-only')}
+        className={cn(
+          'row-start-1 col-start-3',
+          !hasVisibleLabels && 'sr-only',
+        )}
       >
         {labels.vatRate}
       </Input.Label>
-      <div aria-hidden="true" />
+      <div className="row-start-1 col-start-4" aria-hidden="true" />
 
-      {/* Row 2: inputs + actions */}
+      {/* Row 2: inputs + actions - explicitly placed in row 2 */}
       <NumberInput
         id={ids.net}
         data-testid="line-item-net"
+        className="row-start-2 col-start-1"
         value={net ?? undefined}
         onChange={handleNetChange}
         onBlur={handleNetBlur}
@@ -170,6 +180,7 @@ export const LineItem = ({
       <NumberInput
         id={ids.gross}
         data-testid="line-item-gross"
+        className="row-start-2 col-start-2"
         value={gross ?? undefined}
         onChange={handleGrossChange}
         onBlur={handleGrossBlur}
@@ -181,6 +192,7 @@ export const LineItem = ({
       <Select
         id={ids.vatRate}
         data-testid="line-item-vat-rate"
+        className="row-start-2 col-start-3"
         value={String(vatRate)}
         onChange={(selectedValue) => {
           if (selectedValue !== null) {
@@ -192,7 +204,7 @@ export const LineItem = ({
         readOnly={isReadOnly}
         allowDeselect={false}
       />
-      <div className="flex items-center gap-1 self-center justify-self-end">
+      <div className="row-start-2 col-start-4 flex items-center gap-1 self-center justify-self-end">
         {hasInitialDataError && (
           <Tooltip label={labels.fixButton}>
             <ActionIcon
@@ -210,13 +222,13 @@ export const LineItem = ({
         {children}
       </div>
 
-      {/* Row 3: Field Errors; for now only error for gross is used  */}
-      <div aria-hidden="true" />
-      <Input.Error>
+      {/* Row 3: Field Errors - explicitly placed in row 3 */}
+      <div className="row-start-3 col-start-1" aria-hidden="true" />
+      <Input.Error className="row-start-3 col-start-2">
         {hasInitialDataError ? labels.grossError : undefined}
       </Input.Error>
-      <div aria-hidden="true" />
-      <div aria-hidden="true" />
+      <div className="row-start-3 col-start-3" aria-hidden="true" />
+      <div className="row-start-3 col-start-4" aria-hidden="true" />
     </div>
   )
 }
