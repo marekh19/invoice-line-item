@@ -2,8 +2,8 @@
 
 ## Stuff I would like to cover
 
-- [ ] Unit / Integration tests for all the business logic (especially those cases mentioned in the assignment)
-- [ ] Storybook story for the line item component
+- [x] Unit / Integration tests for all the business logic (especially those cases mentioned in the assignment)
+- [x] Storybook story for the line item component
 - [ ] Fake in memory backend api to fetch initial line items
 - [ ] Even some easy dev tools to refetch line items and select the number of them
 - [ ] Everything well documented with README.md files next to the implementation and the core root README.md serving as navigation to all the other documents
