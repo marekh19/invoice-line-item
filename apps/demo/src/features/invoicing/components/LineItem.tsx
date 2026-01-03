@@ -25,7 +25,6 @@ const commonInputPropsFactory = (
   fixedDecimalScale: true,
   thousandSeparator: ',',
   placeholder: '0.00',
-  min: 0,
   ...unit,
 })
 
@@ -95,7 +94,7 @@ export const LineItem = ({
     handleVatRateChange,
     fixGross,
   } = useLineItemState({
-    initialValue: value,
+    value,
     onChange,
   })
 

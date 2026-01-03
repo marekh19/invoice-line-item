@@ -20,23 +20,16 @@ export type VatRateOption = {
 }
 
 /**
- * Tracks which field was last edited by the user.
- * Used to determine the source of truth for recalculations.
- *
- * - null = pristine state, treat as 'net'
- * - 'net' = net was last edited, gross should be computed from net
- * - 'gross' = gross was last edited, net should be computed from gross
- */
-export type LastEdited = 'net' | 'gross' | null
-
-/**
  * Internal state used by the useLineItemState hook.
  */
 export type LineItemState = {
   net: number | null
   gross: number | null
   vatRate: number
-  lastEdited: LastEdited
+  /** Whether the field has been modified since last commit */
+  dirtyField: 'net' | 'gross' | null
+  /** Whether user has interacted with the component */
+  hasUserInteracted: boolean
 }
 
 /**

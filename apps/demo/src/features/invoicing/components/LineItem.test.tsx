@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -13,7 +14,30 @@ import type { LineItemValue } from '../types'
 type OnChangeMock = Mock<(value: LineItemValue) => void>
 
 /**
- * Renders the LineItem component wrapped in MantineProvider
+ * Controlled wrapper that properly updates state when onChange is called.
+ * This simulates how a real parent component would behave.
+ */
+function ControlledLineItem({
+  initialValue,
+  onChangeSpy,
+  ...props
+}: Omit<React.ComponentProps<typeof LineItem>, 'value' | 'onChange'> & {
+  initialValue: LineItemValue
+  onChangeSpy: OnChangeMock
+}) {
+  const [value, setValue] = useState(initialValue)
+
+  const handleChange = (newValue: LineItemValue) => {
+    setValue(newValue)
+    onChangeSpy(newValue)
+  }
+
+  return <LineItem value={value} onChange={handleChange} {...props} />
+}
+
+/**
+ * Renders the LineItem component in controlled mode with proper state management.
+ * onChange calls update the internal state, simulating a real parent component.
  */
 function renderLineItem(
   props: Partial<Omit<React.ComponentProps<typeof LineItem>, 'onChange'>> & {
@@ -22,10 +46,15 @@ function renderLineItem(
   },
 ) {
   const onChange = props.onChange ?? vi.fn<(value: LineItemValue) => void>()
+  const { value, ...rest } = props
 
   const result = render(
     <MantineProvider>
-      <LineItem {...props} onChange={onChange} />
+      <ControlledLineItem
+        initialValue={value}
+        onChangeSpy={onChange}
+        {...rest}
+      />
     </MantineProvider>,
   )
 
@@ -895,5 +924,117 @@ describe('LineItem - Additional Edge Cases', () => {
 
     expect(netInput).toHaveValue('1,234,567.89')
     expect(grossInput).toHaveValue('1,493,827.15')
+  })
+})
+
+// =============================================================================
+// HIDDEN LABELS (aria-label mode)
+// =============================================================================
+
+describe('LineItem - Hidden Labels', () => {
+  it('uses aria-label when hasVisibleLabels is false', () => {
+    renderLineItem({
+      value: { net: 100, gross: 121, vatRate: 21 },
+      hasVisibleLabels: false,
+    })
+
+    const { netInput, grossInput, vatSelect } = getInputs()
+
+    // Should have aria-label attributes
+    expect(netInput).toHaveAttribute('aria-label', 'Net amount')
+    expect(grossInput).toHaveAttribute('aria-label', 'Gross amount')
+    expect(vatSelect).toHaveAttribute('aria-label', 'VAT rate')
+
+    // Should NOT have visible label elements (check by querying for label text)
+    expect(screen.queryByText('Net amount')).not.toBeInTheDocument()
+    expect(screen.queryByText('Gross amount')).not.toBeInTheDocument()
+  })
+
+  it('shows visible labels by default (hasVisibleLabels=true)', () => {
+    renderLineItem({
+      value: { net: 100, gross: 121, vatRate: 21 },
+      hasVisibleLabels: true,
+    })
+
+    // Should have visible label elements
+    expect(screen.getByText('Net amount')).toBeInTheDocument()
+    expect(screen.getByText('Gross amount')).toBeInTheDocument()
+    expect(screen.getByText('VAT rate')).toBeInTheDocument()
+  })
+})
+
+// =============================================================================
+// PROP SYNCHRONIZATION (server refetch)
+// =============================================================================
+
+describe('LineItem - Prop Synchronization', () => {
+  it('syncs internal state when value prop changes', () => {
+    const onChange = vi.fn()
+
+    // Render directly (not through ControlledLineItem) to test prop changes
+    const { rerender } = render(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 100, gross: 121, vatRate: 21 }}
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    const { netInput, grossInput } = getInputs()
+
+    // Initial values
+    expect(netInput).toHaveValue('100.00')
+    expect(grossInput).toHaveValue('121.00')
+
+    // Simulate server refetch with new data
+    rerender(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 200, gross: 242, vatRate: 21 }}
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    // Should reflect new values
+    expect(netInput).toHaveValue('200.00')
+    expect(grossInput).toHaveValue('242.00')
+  })
+
+  it('resets interaction state when value prop changes', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    // Render directly to test prop changes
+    const { rerender } = render(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 100, gross: 120, vatRate: 21 }} // Inconsistent
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    // Should show error for inconsistent initial data
+    expect(getFixButton()).toBeVisible()
+
+    // User interacts - error disappears
+    const { netInput } = getInputs()
+    await typeValue(user, netInput, '100')
+    expect(queryFixButton()).not.toBeInTheDocument()
+
+    // Server refetch with new inconsistent data
+    rerender(
+      <MantineProvider>
+        <LineItem
+          value={{ net: 200, gross: 240, vatRate: 21 }} // Still inconsistent
+          onChange={onChange}
+        />
+      </MantineProvider>,
+    )
+
+    // Error should reappear (interaction state was reset)
+    expect(getFixButton()).toBeVisible()
   })
 })

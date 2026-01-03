@@ -184,6 +184,86 @@ When initial data is inconsistent, a fix button appears next to the gross field:
 
 ---
 
+## Prop Synchronization: Handling Server Refetch
+
+### The Problem
+
+When data is fetched from the server and the component re-renders with new `value` props, the internal state needs to sync. Without this, a server refetch would be ignored.
+
+### Solution: useEffect Sync
+
+We synchronize internal state when `initialValue` prop changes:
+
+```typescript
+useEffect(() => {
+  setNet(initialValue.net)
+  setGross(initialValue.gross)
+  setVatRate(initialValue.vatRate)
+  setDirtyField(null)
+  setHasUserInteracted(false)
+}, [initialValue.net, initialValue.gross, initialValue.vatRate])
+```
+
+This ensures:
+- New server data is reflected immediately
+- Interaction state is reset (validation re-runs on new data)
+- Dirty tracking is cleared
+
+### Alternative: Key-based Remount
+
+Consumers can also force a full remount using React keys:
+
+```tsx
+<LineItem key={invoice.id} value={invoice.lineItem} />
+```
+
+Both approaches work. The `useEffect` approach is less disruptive (preserves focus, animations), while key-based remount is simpler but fully resets the component.
+
+---
+
+## Why Not "Last Edited Wins"?
+
+We initially considered tracking `lastEdited` to preserve whichever field the user edited most recently when VAT rate changes. We intentionally chose against this because:
+
+1. **Hidden state problem**: Users can't see which field is "in control"
+2. **Unpredictable behavior**: Same action (changing VAT) produces different results
+3. **Complexity**: Requires additional UI feedback to make behavior visible
+4. **B2B focus**: In invoicing, net is almost always the primary value
+
+The simpler "net is always source of truth" approach provides predictable, explainable behavior without hidden state.
+
+---
+
+## Debouncing Considerations
+
+### Current Behavior
+
+The component calls `onChange` on every commit event:
+- Blur of net/gross input (if field was modified)
+- VAT rate change
+
+This is intentional for immediate feedback and form validation.
+
+### For Auto-Save Scenarios
+
+If consumers implement auto-save (e.g., saving to server on every change), they should debounce on their side:
+
+```typescript
+const debouncedSave = useDebouncedCallback(
+  (value: LineItemValue) => saveToServer(value),
+  500
+)
+
+<LineItem
+  value={lineItem}
+  onChange={debouncedSave}
+/>
+```
+
+This keeps the component simple and gives consumers control over their specific timing requirements.
+
+---
+
 ## Future Considerations
 
 If B2C "fixed gross price" scenarios become important, we could add Option C (explicit toggle) as an enhancement. The current architecture supports this — we'd just need to add a `priceEntryMode: 'net' | 'gross'` prop and use it to determine the source of truth for VAT changes.
