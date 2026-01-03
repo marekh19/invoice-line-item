@@ -23,6 +23,7 @@ type PlaygroundArgs = {
   fixButtonLabel: string
   // State
   disabled: boolean
+  isReadOnly: boolean
   // Callback
   onChange: (value: LineItemValue) => void
 }
@@ -41,7 +42,8 @@ const meta: Meta<PlaygroundArgs> = {
     },
     initialGross: {
       control: { type: 'number' },
-      description: 'Initial gross amount (auto-calculated unless inconsistent mode)',
+      description:
+        'Initial gross amount (auto-calculated unless inconsistent mode)',
       table: { category: 'Initial Values' },
     },
     initialVatRate: {
@@ -52,7 +54,8 @@ const meta: Meta<PlaygroundArgs> = {
     },
     simulateInconsistentData: {
       control: { type: 'boolean' },
-      description: 'Simulate bad data from server (gross won\'t match net × VAT)',
+      description:
+        "Simulate bad data from server (gross won't match net × VAT)",
       table: { category: 'Initial Values' },
     },
     currencyPrefix: {
@@ -100,6 +103,11 @@ const meta: Meta<PlaygroundArgs> = {
       description: 'Disable all inputs',
       table: { category: 'State' },
     },
+    isReadOnly: {
+      control: { type: 'boolean' },
+      description: 'Make all fields not editable',
+      table: { category: 'State' },
+    },
     onChange: {
       action: 'changed',
       description: 'Callback when values change',
@@ -120,6 +128,7 @@ const meta: Meta<PlaygroundArgs> = {
     grossErrorLabel: 'Gross amount does not match calculation',
     fixButtonLabel: 'Fix: recalculate gross from net',
     disabled: false,
+    isReadOnly: false,
     onChange: fn(),
   },
   render: ({
@@ -136,13 +145,17 @@ const meta: Meta<PlaygroundArgs> = {
     grossErrorLabel,
     fixButtonLabel,
     disabled,
+    isReadOnly,
     onChange,
   }) => {
     // Calculate correct gross, or use a wrong value if simulating inconsistent data
     const gross =
       simulateInconsistentData && initialNet !== null
         ? initialNet * 2 // Obviously wrong value
-        : initialGross ?? (initialNet !== null ? computeGross(initialNet, initialVatRate) : null)
+        : (initialGross ??
+          (initialNet !== null
+            ? computeGross(initialNet, initialVatRate)
+            : null))
 
     return (
       <LineItem
@@ -153,7 +166,10 @@ const meta: Meta<PlaygroundArgs> = {
         }}
         unit={
           currencyPrefix || currencySuffix
-            ? { prefix: currencyPrefix || undefined, suffix: currencySuffix || undefined }
+            ? {
+                prefix: currencyPrefix || undefined,
+                suffix: currencySuffix || undefined,
+              }
             : undefined
         }
         labels={{
@@ -165,6 +181,7 @@ const meta: Meta<PlaygroundArgs> = {
         }}
         hasVisibleLabels={hasVisibleLabels}
         disabled={disabled}
+        isReadOnly={isReadOnly}
         onChange={onChange}
       />
     )

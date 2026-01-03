@@ -46,6 +46,8 @@ type Props = {
    * Useful when rendering multiple rows where labels would be redundant.
    */
   hasVisibleLabels?: boolean
+  /** If true fields are not editable but not disabled. False by default. */
+  isReadOnly?: boolean
 }
 
 /**
@@ -80,6 +82,7 @@ export const LineItem = ({
   unit,
   labels = DEFAULT_LABELS,
   hasVisibleLabels = true,
+  isReadOnly = false,
 }: Props) => {
   const {
     net,
@@ -131,6 +134,7 @@ export const LineItem = ({
         onChange={handleNetChange}
         onBlur={handleNetBlur}
         disabled={disabled}
+        readOnly={isReadOnly}
         {...labelProps.net}
         {...commonInputProps}
       />
@@ -140,6 +144,7 @@ export const LineItem = ({
         onChange={handleGrossChange}
         onBlur={handleGrossBlur}
         disabled={disabled}
+        readOnly={isReadOnly}
         error={hasInitialDataError ? labels.grossError : undefined}
         {...labelProps.gross}
         {...commonInputProps}
@@ -154,6 +159,7 @@ export const LineItem = ({
         }}
         data={selectData}
         disabled={disabled}
+        readOnly={isReadOnly}
         allowDeselect={false}
         {...labelProps.vatRate}
       />
