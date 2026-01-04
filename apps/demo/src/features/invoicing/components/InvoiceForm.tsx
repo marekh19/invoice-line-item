@@ -1,6 +1,7 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { ActionIcon, Button, Switch, Tooltip } from '@repo/ui/components'
 import type { Invoice, VatRateOption } from '@/features/invoicing/types'
+import type { ChangeEvent } from 'react'
 import { LineItem } from '@/features/invoicing/components/LineItem'
 import { useInvoiceForm } from '@/features/invoicing/hooks/useInvoiceForm'
 
@@ -40,15 +41,23 @@ export const InvoiceForm = ({ invoice, vatRates }: Props) => {
     vatRates,
   })
 
+  const handleSwitchEditMode = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.currentTarget.checked) {
+      setIsEditing(true)
+      return
+    }
+    handleCancel()
+  }
+
   return (
     <form onSubmit={handleSubmit}>
       <div className="flex flex-col gap-4">
         {/* Edit mode toggle */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between h-10 items-center">
           <Switch
             label="Edit mode"
             checked={isEditing}
-            onChange={(e) => setIsEditing(e.currentTarget.checked)}
+            onChange={handleSwitchEditMode}
             disabled={updateMutation.isPending}
           />
           {isEditing && (
