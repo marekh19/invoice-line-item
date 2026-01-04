@@ -62,28 +62,9 @@ type Props = {
 }
 
 /**
- * A line item component for invoice editing with VAT calculations.
+ * Line item component for invoice editing with VAT calculations.
  *
- * Features:
- * - Enter net or gross amount
- * - Select VAT rate from predefined options
- * - Automatic recalculation of the other amount
- * - Precise decimal math using big.js
- * - Validation indicator for inconsistent data from server
- *
- * ## Behavior
- *
- * - When net is edited and blurred, gross is recalculated
- * - When gross is edited and blurred, net is recalculated
- * - When VAT rate changes, gross is recalculated from net
- * - Clearing a field and blurring clears both fields
- * - If initial data is inconsistent, a red indicator and fix button appear
- *
- * @example
- * <LineItem
- *   value={{ net: 100, gross: 121, vatRate: 21 }}
- *   onChange={(value) => console.log('Updated:', value)}
- * />
+ * @see ./LineItem.md for detailed documentation
  */
 export const LineItem = ({
   value,

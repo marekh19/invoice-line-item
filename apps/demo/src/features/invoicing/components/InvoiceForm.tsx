@@ -21,9 +21,6 @@ type Props = {
  * - Add/remove line items
  * - Submit all changes atomically
  * - Cancel to discard changes
- *
- * Uses react-hook-form with Zod validation and controlled `values` prop
- * to stay in sync with server data.
  */
 export const InvoiceForm = ({ invoice, vatRates }: Props) => {
   const {
