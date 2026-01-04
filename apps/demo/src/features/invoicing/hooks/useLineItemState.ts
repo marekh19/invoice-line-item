@@ -1,7 +1,8 @@
 import { useState } from 'react'
+
 import type { LineItemValue } from '@/features/invoicing/types'
-import { computeGross, computeNet } from '@/features/invoicing/utils/vat'
 import { toNumberOrNull } from '@/features/invoicing/utils/money'
+import { computeGross, computeNet } from '@/features/invoicing/utils/vat'
 
 type UseLineItemStateOptions = {
   /** The value from parent - source of truth for confirmed state */

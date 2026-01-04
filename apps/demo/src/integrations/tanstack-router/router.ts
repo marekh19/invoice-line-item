@@ -1,7 +1,8 @@
 import { createRouter } from '@tanstack/react-router'
+
 import { DefaultPendingComponent } from '@/components/DefaultPendingComponent'
-import { routeTree } from '@/routeTree.gen'
 import { queryClient } from '@/integrations/tanstack-query/queryClient'
+import { routeTree } from '@/routeTree.gen'
 
 export const router = createRouter({
   routeTree,

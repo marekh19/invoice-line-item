@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { round2, toNumberOrNull } from './money'
 
 describe('round2', () => {

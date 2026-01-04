@@ -1,8 +1,9 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
+
+import type { LineItemValue } from '../types'
 import { computeGross } from '../utils/vat'
 import { LineItem } from './LineItem'
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { LineItemValue } from '../types'
 
 type PlaygroundArgs = {
   // Initial values

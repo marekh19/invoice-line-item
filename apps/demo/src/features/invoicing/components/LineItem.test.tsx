@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from 'vitest'
+import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MantineProvider } from '@mantine/core'
-import { LineItem } from './LineItem'
+import { describe, expect, it, vi } from 'vitest'
 import type { Mock } from 'vitest'
+
 import type { LineItemValue } from '../types'
+import { LineItem } from './LineItem'
 
 // =============================================================================
 // TEST UTILITIES

@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import type { Preview } from '@storybook/react-vite'
+
 import '@/styles/global.css'
 
 export default {

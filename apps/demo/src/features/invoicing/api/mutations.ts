@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import type { InvoiceLine } from '@/features/invoicing/types'
+
 import { invoiceApi } from './invoiceApi'
 import { invoicingKeys } from './queryKeys'
-import type { InvoiceLine } from '@/features/invoicing/types'
 
 /**
  * Mutation hook for updating all invoice lines.

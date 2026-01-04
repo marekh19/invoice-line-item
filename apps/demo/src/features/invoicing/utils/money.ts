@@ -1,4 +1,5 @@
 import Big from 'big.js'
+
 import { CURRENCY_DECIMALS } from '@/features/invoicing/constants'
 
 /**

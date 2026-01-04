@@ -1,9 +1,10 @@
+import type { ChangeEvent } from 'react'
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { ActionIcon, Button, Switch, Tooltip } from '@repo/ui/components'
-import type { Invoice, VatRateOption } from '@/features/invoicing/types'
-import type { ChangeEvent } from 'react'
+
 import { LineItem } from '@/features/invoicing/components/LineItem'
 import { useInvoiceForm } from '@/features/invoicing/hooks/useInvoiceForm'
+import type { Invoice, VatRateOption } from '@/features/invoicing/types'
 
 type Props = {
   /** Invoice data from server */
@@ -53,7 +54,7 @@ export const InvoiceForm = ({ invoice, vatRates }: Props) => {
     <form onSubmit={handleSubmit}>
       <div className="flex flex-col gap-4">
         {/* Edit mode toggle */}
-        <div className="flex justify-between h-10 items-center">
+        <div className="flex h-10 items-center justify-between">
           <Switch
             label="Edit mode"
             checked={isEditing}
@@ -79,7 +80,7 @@ export const InvoiceForm = ({ invoice, vatRates }: Props) => {
         {/* Line items */}
         <div className="flex flex-col gap-2">
           {fields.map((field, index) => (
-            <div key={field._fieldId} className="flex gap-1 items-center">
+            <div key={field._fieldId} className="flex items-center gap-1">
               <LineItem
                 value={field}
                 vatRates={vatRates}
@@ -120,7 +121,7 @@ export const InvoiceForm = ({ invoice, vatRates }: Props) => {
 
         {/* Form error */}
         {form.formState.errors.lines?.message && (
-          <p className="text-red-500 text-sm">
+          <p className="text-sm text-red-500">
             {form.formState.errors.lines.message}
           </p>
         )}

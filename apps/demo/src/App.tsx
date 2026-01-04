@@ -1,10 +1,11 @@
-import { QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
-import { router } from '@/integrations/tanstack-router/router'
-import { queryClient } from '@/integrations/tanstack-query/queryClient'
 
-export const Providers = () => {
+import { queryClient } from '@/integrations/tanstack-query/queryClient'
+import { router } from '@/integrations/tanstack-router/router'
+
+export const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <MantineProvider>
