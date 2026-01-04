@@ -19,11 +19,3 @@ export const invoiceQueryOptions = queryOptions({
   queryKey: invoicingKeys.invoice(),
   queryFn: () => invoiceApi.getInvoice(),
 })
-
-/**
- * Query options for fetching just the invoice lines.
- */
-export const invoiceLinesQueryOptions = queryOptions({
-  queryKey: invoicingKeys.invoiceLines(),
-  queryFn: () => invoiceApi.getInvoiceLines(),
-})

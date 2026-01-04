@@ -1,4 +1,4 @@
-import { Loader } from '@mantine/core'
+import { Loader } from '@repo/ui/components'
 
 export function DefaultPendingComponent() {
   return (

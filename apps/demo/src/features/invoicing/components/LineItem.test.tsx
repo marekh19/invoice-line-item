@@ -896,26 +896,31 @@ describe('LineItem - Additional Edge Cases', () => {
 })
 
 // =============================================================================
-// HIDDEN LABELS (aria-label mode)
+// HIDDEN LABELS (sr-only mode)
 // =============================================================================
 
 describe('LineItem - Hidden Labels', () => {
-  it('uses aria-label when hasVisibleLabels is false', () => {
+  it('uses sr-only class when hasVisibleLabels is false', () => {
     renderLineItem({
       value: { net: 100, gross: 121, vatRate: 21 },
       hasVisibleLabels: false,
     })
 
+    // Labels should exist but be visually hidden with sr-only class
+    const netLabel = screen.getByText('Net amount')
+    const grossLabel = screen.getByText('Gross amount')
+    const vatLabel = screen.getByText('VAT rate')
+
+    expect(netLabel).toHaveClass('sr-only')
+    expect(grossLabel).toHaveClass('sr-only')
+    expect(vatLabel).toHaveClass('sr-only')
+
+    // Labels should still be associated with inputs via htmlFor/id
     const { netInput, grossInput, vatSelect } = getInputs()
-
-    // Should have aria-label attributes
-    expect(netInput).toHaveAttribute('aria-label', 'Net amount')
-    expect(grossInput).toHaveAttribute('aria-label', 'Gross amount')
-    expect(vatSelect).toHaveAttribute('aria-label', 'VAT rate')
-
-    // Should NOT have visible label elements (check by querying for label text)
-    expect(screen.queryByText('Net amount')).not.toBeInTheDocument()
-    expect(screen.queryByText('Gross amount')).not.toBeInTheDocument()
+    // Verify the association: label's 'for' should match input's 'id'
+    expect(netLabel.getAttribute('for')).toBe(netInput.id)
+    expect(grossLabel.getAttribute('for')).toBe(grossInput.id)
+    expect(vatLabel.getAttribute('for')).toBe(vatSelect.id)
   })
 
   it('shows visible labels by default (hasVisibleLabels=true)', () => {
@@ -924,10 +929,14 @@ describe('LineItem - Hidden Labels', () => {
       hasVisibleLabels: true,
     })
 
-    // Should have visible label elements
-    expect(screen.getByText('Net amount')).toBeInTheDocument()
-    expect(screen.getByText('Gross amount')).toBeInTheDocument()
-    expect(screen.getByText('VAT rate')).toBeInTheDocument()
+    // Should have visible label elements (no sr-only class)
+    const netLabel = screen.getByText('Net amount')
+    const grossLabel = screen.getByText('Gross amount')
+    const vatLabel = screen.getByText('VAT rate')
+
+    expect(netLabel).not.toHaveClass('sr-only')
+    expect(grossLabel).not.toHaveClass('sr-only')
+    expect(vatLabel).not.toHaveClass('sr-only')
   })
 })
 

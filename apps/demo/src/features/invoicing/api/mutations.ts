@@ -20,33 +20,3 @@ export function useUpdateInvoiceLinesMutation() {
     },
   })
 }
-
-/**
- * Mutation hook for removing an invoice line by ID.
- * Invalidates invoice queries on success.
- */
-export function useRemoveInvoiceLineMutation() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (lineId: string) => invoiceApi.removeInvoiceLine(lineId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: invoicingKeys.invoice() })
-    },
-  })
-}
-
-/**
- * Mutation hook for adding a new empty invoice line.
- * Invalidates invoice queries on success.
- */
-export function useAddInvoiceLineMutation() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (vatRate?: number) => invoiceApi.addInvoiceLine(vatRate),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: invoicingKeys.invoice() })
-    },
-  })
-}

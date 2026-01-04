@@ -3,7 +3,7 @@ import { z } from 'zod'
 /**
  * Schema for a single invoice line item.
  */
-export const lineItemSchema = z.object({
+const lineItemSchema = z.object({
   id: z.string(),
   net: z.number().nullable(),
   gross: z.number().nullable(),
@@ -16,6 +16,3 @@ export const lineItemSchema = z.object({
 export const invoiceFormSchema = z.object({
   lines: z.array(lineItemSchema).min(1, 'At least one line item is required'),
 })
-
-export type InvoiceFormValues = z.infer<typeof invoiceFormSchema>
-export type LineItemFormValues = z.infer<typeof lineItemSchema>
