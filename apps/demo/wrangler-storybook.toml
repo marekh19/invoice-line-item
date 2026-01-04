@@ -1,0 +1,12 @@
+name = "invoice-line-item-sb"
+compatibility_date = "2025-01-03"
+workers_dev = false
+
+[assets]
+directory = "./storybook-static"
+not_found_handling = "404-page"
+html_handling = "drop-trailing-slash"
+
+[[routes]]
+pattern = "invoice-line-item-sb.marek.work"
+custom_domain = true
