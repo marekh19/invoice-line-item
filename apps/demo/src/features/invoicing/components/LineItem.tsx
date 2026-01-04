@@ -173,6 +173,11 @@ export const LineItem = ({
         value={net ?? undefined}
         onChange={handleNetChange}
         onBlur={handleNetBlur}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleNetBlur()
+          }
+        }}
         disabled={disabled}
         readOnly={isReadOnly}
         {...commonInputProps}
@@ -184,6 +189,11 @@ export const LineItem = ({
         value={gross ?? undefined}
         onChange={handleGrossChange}
         onBlur={handleGrossBlur}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleGrossBlur()
+          }
+        }}
         disabled={disabled}
         readOnly={isReadOnly}
         error={hasInitialDataError}
