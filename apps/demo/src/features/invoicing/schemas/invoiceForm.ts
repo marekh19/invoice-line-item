@@ -16,3 +16,5 @@ const lineItemSchema = z.object({
 export const invoiceFormSchema = z.object({
   lines: z.array(lineItemSchema).min(1, 'At least one line item is required'),
 })
+
+export type InvoiceFormSchema = z.infer<typeof invoiceFormSchema>

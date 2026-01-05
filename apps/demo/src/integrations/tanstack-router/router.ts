@@ -12,6 +12,8 @@ export const router = createRouter({
   defaultStructuralSharing: true,
   defaultPreloadStaleTime: 0,
   defaultPendingComponent: DefaultPendingComponent,
+  defaultPendingMs: 300,
+  defaultPendingMinMs: 500,
 })
 
 // Register the router instance for type safety

@@ -9,7 +9,7 @@ import { invoicingKeys } from './queryKeys'
  * Mutation hook for updating all invoice lines.
  * Invalidates invoice queries on success.
  */
-export function useUpdateInvoiceLinesMutation() {
+export const useUpdateInvoiceLinesMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({

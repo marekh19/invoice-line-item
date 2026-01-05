@@ -4,6 +4,7 @@ import { useFieldArray, useForm } from 'react-hook-form'
 
 import { useUpdateInvoiceLinesMutation } from '@/features/invoicing/api/mutations'
 import { invoiceFormSchema } from '@/features/invoicing/schemas/invoiceForm'
+import type { InvoiceFormSchema } from '@/features/invoicing/schemas/invoiceForm'
 import type {
   Invoice,
   LineItemValue,
@@ -23,7 +24,7 @@ export const useInvoiceForm = ({ invoice, vatRates }: Props) => {
 
   const defaultVatRate = vatRates.at(0)?.value ?? 0
 
-  const form = useForm({
+  const form = useForm<InvoiceFormSchema>({
     resolver: zodResolver(invoiceFormSchema),
     values: { lines: invoice.lines },
   })

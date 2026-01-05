@@ -11,9 +11,11 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "@mantine/core": "catalog:"
+    "@mantine/core": "catalog:",
+    "@mantine/hooks": "catalog:"
   },
   "peerDependencies": {
-    "@mantine/core": "catalog:"
+    "@mantine/core": "catalog:",
+    "@mantine/hooks": "catalog:"
   }
 }

@@ -39,7 +39,7 @@ const STORAGE_KEY = 'invoice-demo-data'
 /**
  * Default invoice data used when no saved data exists.
  */
-function createDefaultInvoice(): Invoice {
+const createDefaultInvoice = (): Invoice => {
   return {
     id: 'invoice-001',
     lines: [
@@ -68,7 +68,7 @@ function createDefaultInvoice(): Invoice {
 /**
  * Loads invoice from localStorage, or returns default if not found.
  */
-function loadFromStorage(): Invoice {
+const loadFromStorage = (): Invoice => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
@@ -83,7 +83,7 @@ function loadFromStorage(): Invoice {
 /**
  * Saves invoice to localStorage.
  */
-function saveToStorage(invoice: Invoice): void {
+const saveToStorage = (invoice: Invoice): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(invoice))
   } catch {
@@ -122,7 +122,7 @@ let invoiceStore: Invoice = loadFromStorage()
  *
  * @returns Promise resolving to array of VAT rate options
  */
-async function getVatRates(): Promise<Array<VatRateOption>> {
+const getVatRates = async (): Promise<Array<VatRateOption>> => {
   await delay()
   return [...vatRates]
 }
@@ -132,7 +132,7 @@ async function getVatRates(): Promise<Array<VatRateOption>> {
  *
  * @returns Promise resolving to the invoice object
  */
-async function getInvoice(): Promise<Invoice> {
+const getInvoice = async (): Promise<Invoice> => {
   await delay()
   // Return a deep copy to prevent direct mutation
   return {
@@ -147,7 +147,7 @@ async function getInvoice(): Promise<Invoice> {
  *
  * @returns Promise resolving to array of invoice lines
  */
-async function getInvoiceLines(): Promise<Array<InvoiceLine>> {
+const getInvoiceLines = async (): Promise<Array<InvoiceLine>> => {
   const invoice = await getInvoice()
   return invoice.lines
 }
@@ -165,9 +165,9 @@ async function getInvoiceLines(): Promise<Array<InvoiceLine>> {
  * @param lines - The new array of invoice lines (with or without IDs)
  * @returns Promise resolving to the updated invoice
  */
-async function updateInvoiceLines(
+const updateInvoiceLines = async (
   lines: Array<Omit<InvoiceLine, 'id'> & { id?: string }>,
-): Promise<Invoice> {
+): Promise<Invoice> => {
   await delay()
 
   // Ensure all lines have IDs (generate for new lines)
@@ -193,7 +193,7 @@ async function updateInvoiceLines(
  * @param vatRate - The default VAT rate for the new line (defaults to 21%)
  * @returns Promise resolving to the updated invoice
  */
-async function addInvoiceLine(vatRate: number = 21): Promise<Invoice> {
+const addInvoiceLine = async (vatRate: number = 21): Promise<Invoice> => {
   await delay()
 
   const newLine: InvoiceLine = {
@@ -218,7 +218,7 @@ async function addInvoiceLine(vatRate: number = 21): Promise<Invoice> {
  * @param lineId - The ID of the line to remove
  * @returns Promise resolving to the updated invoice
  */
-async function removeInvoiceLine(lineId: string): Promise<Invoice> {
+const removeInvoiceLine = async (lineId: string): Promise<Invoice> => {
   await delay()
 
   invoiceStore = {
@@ -234,7 +234,7 @@ async function removeInvoiceLine(lineId: string): Promise<Invoice> {
  * Resets the invoice to initial demo data.
  * Clears localStorage and reinitializes with default data.
  */
-async function resetInvoice(): Promise<Invoice> {
+const resetInvoice = async (): Promise<Invoice> => {
   await delay()
 
   invoiceStore = createDefaultInvoice()
