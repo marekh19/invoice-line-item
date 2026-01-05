@@ -17,6 +17,7 @@ The UI was treated as secondary to business logic and architecture. Current limi
 - **CI/CD**: Set up pipeline for validation and deployment
 - **Monorepo**: Migrate to Turborepo for better DX
 - **Storybook**: Extract as separate app in monorepo
+- **Eslint**: More robust configuration with key plugins for a production project
 
 ## API & Backend
 
